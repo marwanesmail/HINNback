@@ -1,0 +1,298 @@
+/* نظام الألوان الطبي الهادئ */
+
+:root {
+  /* الألوان الأساسية */
+  --primary-blue: #2563eb;
+  --primary-blue-light: #3b82f6;
+  --primary-blue-dark: #1d4ed8;
+  
+  /* الأخضر الطبي */
+  --medical-green: #059669;
+  --medical-green-light: #10b981;
+  --medical-green-dark: #047857;
+  
+  /* الرمادي الناعم */
+  --gray-soft: #6b7280;
+  --gray-light: #9ca3af;
+  --gray-dark: #374151;
+  
+  /* الخلفيات */
+  --bg-white: #ffffff;
+  --bg-gray-light: #f8fafc;
+  --bg-blue-light: #f0f9ff;
+  --bg-green-light: #ecfdf5;
+  
+  /* ألوان الحالة */
+  --success-color: #059669;
+  --warning-color: #d97706;
+  --error-color: #dc2626;
+  --info-color: #2563eb;
+  
+  /* الظلال الناعمة */
+  --shadow-soft: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-large: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  
+  /* الحدود */
+  --border-light: #e5e7eb;
+  --border-medium: #d1d5db;
+  --border-dark: #9ca3af;
+}
+
+/* إعادة تعريف الألوان الأساسية للمشروع */
+
+/* الخلفيات */
+.bg-primary {
+  background-color: var(--primary-blue) !important;
+}
+
+.bg-primary-light {
+  background-color: var(--primary-blue-light) !important;
+}
+
+.bg-medical-green {
+  background-color: var(--medical-green) !important;
+}
+
+.bg-soft {
+  background-color: var(--bg-gray-light) !important;
+}
+
+.bg-clean {
+  background-color: var(--bg-white) !important;
+}
+
+/* النصوص */
+.text-primary {
+  color: var(--primary-blue) !important;
+}
+
+.text-medical-green {
+  color: var(--medical-green) !important;
+}
+
+.text-soft {
+  color: var(--gray-soft) !important;
+}
+
+.text-dark-soft {
+  color: var(--gray-dark) !important;
+}
+
+/* الأزرار الطبية */
+.btn-medical-primary {
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-light) 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-medical-primary:hover {
+  background: linear-gradient(135deg, var(--primary-blue-dark) 0%, var(--primary-blue) 100%);
+  box-shadow: var(--shadow-medium);
+  transform: translateY(-1px);
+}
+
+.btn-medical-success {
+  background: linear-gradient(135deg, var(--medical-green) 0%, var(--medical-green-light) 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-medical-success:hover {
+  background: linear-gradient(135deg, var(--medical-green-dark) 0%, var(--medical-green) 100%);
+  box-shadow: var(--shadow-medium);
+  transform: translateY(-1px);
+}
+
+/* البطاقات الطبية */
+.card-medical {
+  background: var(--bg-white);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: var(--shadow-soft);
+  transition: all 0.3s ease;
+}
+
+.card-medical:hover {
+  box-shadow: var(--shadow-medium);
+  transform: translateY(-2px);
+}
+
+.card-medical-blue {
+  background: var(--bg-blue-light);
+  border: 1px solid var(--primary-blue-light);
+}
+
+.card-medical-green {
+  background: var(--bg-green-light);
+  border: 1px solid var(--medical-green-light);
+}
+
+/* حقول الإدخال الطبية */
+.input-medical {
+  border: 2px solid var(--border-light);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  background: var(--bg-white);
+}
+
+.input-medical:focus {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
+}
+
+/* شريط التنقل الطبي */
+.navbar-medical {
+  background: var(--bg-white);
+  border-bottom: 1px solid var(--border-light);
+  box-shadow: var(--shadow-soft);
+}
+
+/* الروابط الطبية */
+.link-medical {
+  color: var(--primary-blue);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  -webkit-transition: all 0.3s ease;
+  -moz-transition: all 0.3s ease;
+  -ms-transition: all 0.3s ease;
+  -o-transition: all 0.3s ease;
+}
+
+.link-medical:hover {
+  color: var(--primary-blue-dark);
+  text-decoration: underline;
+}
+
+/* الشارات الطبية */
+.badge-medical-primary {
+  background: var(--primary-blue);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-medical-success {
+  background: var(--medical-green);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* التنبيهات الطبية */
+.alert-medical-info {
+  background: var(--bg-blue-light);
+  border: 1px solid var(--primary-blue-light);
+  color: var(--primary-blue-dark);
+  padding: 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+.alert-medical-success {
+  background: var(--bg-green-light);
+  border: 1px solid var(--medical-green-light);
+  color: var(--medical-green-dark);
+  padding: 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+/* الخطوط الطبية */
+.font-medical-title {
+  font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: 600;
+  color: var(--gray-dark);
+  line-height: 1.4;
+}
+
+.font-medical-body {
+  font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: 400;
+  color: var(--gray-soft);
+  line-height: 1.6;
+}
+
+/* تحسينات للوضوح */
+.text-readable {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--gray-dark);
+}
+
+.text-readable-large {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--gray-dark);
+}
+
+/* الفواصل الناعمة */
+.divider-medical {
+  border: none;
+  height: 1px;
+  background: var(--border-light);
+  margin: 24px 0;
+}
+
+/* تأثيرات التركيز للوصولية */
+.focus-medical:focus {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* الحاويات الطبية */
+.container-medical {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.section-medical {
+  padding: 40px 0;
+  background: var(--bg-white);
+}
+
+.section-medical-alt {
+  padding: 40px 0;
+  background: var(--bg-gray-light);
+}
+
+/* تحسينات للهواتف */
+@media (max-width: 768px) {
+  .btn-medical-primary,
+  .btn-medical-success {
+    padding: 14px 20px;
+    font-size: 16px;
+  }
+  
+  .input-medical {
+    padding: 14px 16px;
+    font-size: 16px;
+  }
+  
+  .text-readable {
+    font-size: 16px;
+  }
+  
+  .text-readable-large {
+    font-size: 18px;
+  }
+}
