@@ -213,7 +213,11 @@ const PharmacyInventorySection = ({
                             confirmButtonText: "تحديث",
                             cancelButtonText: "إلغاء",
                             inputValidator: (value) => {
-                              if (!value || isNaN(value) || parseInt(value) < 0) {
+                              if (
+                                !value ||
+                                isNaN(value) ||
+                                parseInt(value) < 0
+                              ) {
                                 return "الرجاء إدخال كمية صحيحة";
                               }
                             },

@@ -98,41 +98,42 @@ const SimpleNavbar = ({
           </div>
         </div>
 
-        {/* وسط: البحث - يتم عرضه فقط إذا تم تفعيله */}
+        {/* Center: Search - only shown if enabled */}
         {showSearch && (
-          <form
-            onSubmit={handleSearch}
-            className="hidden md:flex items-center relative"
-          >
-            <input
-              type="text"
-              placeholder="ابحث..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-64 px-4 py-2 pr-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={clearSearch}
-                className="absolute left-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <FaTimes size={14} />
-              </button>
-            )}
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <div className="search-container hidden md:flex items-center relative">
+            <form onSubmit={handleSearch} className="relative">
+              <input
+                type="text"
+                placeholder="ابحث في لوحة التحكم..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-64 md:w-80 px-4 py-2 pr-10 rounded-full border border-opacity-30 bg-white bg-opacity-10 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white text-white placeholder-white placeholder-opacity-70"
+              />
+              {searchQuery ? (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="absolute left-8 top-1/2 -translate-y-1/2 text-white hover:text-opacity-75"
+                >
+                  <FaTimes size={14} />
+                </button>
+              ) : (
+                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-white text-opacity-70" />
+              )}
+            </form>
 
-            {/* Dropdown نتائج البحث */}
+            {/* Search Results Dropdown */}
             {showSearchResults && (
-              <div className="absolute top-full mt-2 right-0 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-60 overflow-y-auto">
+              <div className="absolute top-full mt-2 right-0 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-50 max-h-80 overflow-y-auto">
                 {searchResults.length > 0 ? (
                   searchResults.map((result, idx) => (
                     <div
                       key={idx}
-                      className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-50"
+                      className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-b-0"
                       onClick={() => {
                         if (result.element) scrollToElement(result.element);
                         setShowSearchResults(false);
+                        setSearchQuery("");
                       }}
                     >
                       <div className="text-sm font-medium text-gray-900 truncate">
@@ -145,14 +146,13 @@ const SimpleNavbar = ({
                   ))
                 ) : (
                   <div className="px-4 py-6 text-center text-gray-500">
-                    لا توجد نتائج
+                    لا توجد نتائج للبحث
                   </div>
                 )}
               </div>
             )}
-          </form>
+          </div>
         )}
-
         {/* شمال: باقي الأزرار */}
         <div className="flex items-center gap-3">
           {/* Home - متاح على جميع الأحجام */}
