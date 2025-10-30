@@ -385,9 +385,9 @@ const DoctorsSearchPage = () => {
       >
         <div className="max-w-7xl mx-auto px-4 py-6 text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            ابحث عن طبيبك
-          </h1>
-          <p className="text-gray-600">اعثر على أفضل الأطباء في منطقتك</p>
+احجز دكتورك الآن         </h1>
+          <p className="text-gray-600">
+رعاية صحية لحياة أفضل ليك</p>
         </div>
       </motion.div>
 

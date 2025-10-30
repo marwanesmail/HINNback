@@ -35,17 +35,24 @@ const PharmacyDashboardSection = ({
   useEffect(() => {
     // Calculate dynamic statistics
     const pending = prescriptions.filter((p) => p.status === "pending").length;
-    const requests = medicineRequests.filter((r) => r.status === "pending").length;
+    const requests = medicineRequests.filter(
+      (r) => r.status === "pending"
+    ).length;
     const lowStockItems = inventory.filter(
       (item) => item.status === "low" || item.status === "out"
     ).length;
-    const exchanges = exchangeRequests.filter((r) => r.status === "pending").length;
-    
+    const exchanges = exchangeRequests.filter(
+      (r) => r.status === "pending"
+    ).length;
+
     // Calculate inventory value
-    const invValue = inventory.reduce((sum, item) => sum + (item.quantity * item.price || 0), 0);
-    
+    const invValue = inventory.reduce(
+      (sum, item) => sum + (item.quantity * item.price || 0),
+      0
+    );
+
     // Calculate completed prescriptions today
-    const today = new Date().toLocaleDateString('ar-EG');
+    const today = new Date().toLocaleDateString("ar-EG");
     const completedToday = prescriptions.filter(
       (p) => p.status === "completed" && p.date === today
     ).length;
@@ -60,7 +67,13 @@ const PharmacyDashboardSection = ({
       inventoryValue: invValue,
       salesGrowth: 15,
     });
-  }, [prescriptions, medicineRequests, inventory, exchangeRequests, pharmacyData]);
+  }, [
+    prescriptions,
+    medicineRequests,
+    inventory,
+    exchangeRequests,
+    pharmacyData,
+  ]);
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -109,7 +122,9 @@ const PharmacyDashboardSection = ({
               <FaPrescription className="text-yellow-700 text-xl" />
             </div>
           </div>
-          <p className="text-sm text-yellow-600 mt-4 font-medium">في انتظار المراجعة</p>
+          <p className="text-sm text-yellow-600 mt-4 font-medium">
+            في انتظار المراجعة
+          </p>
         </motion.div>
 
         <motion.div
@@ -131,7 +146,9 @@ const PharmacyDashboardSection = ({
               <FaBell className="text-orange-700 text-xl" />
             </div>
           </div>
-          <p className="text-sm text-orange-600 mt-4 font-medium">من المرضى القريبين</p>
+          <p className="text-sm text-orange-600 mt-4 font-medium">
+            من المرضى القريبين
+          </p>
         </motion.div>
 
         <motion.div
@@ -153,7 +170,9 @@ const PharmacyDashboardSection = ({
               <FaExclamationTriangle className="text-red-700 text-xl" />
             </div>
           </div>
-          <p className="text-sm text-red-600 mt-4 font-medium">يحتاج إعادة طلب</p>
+          <p className="text-sm text-red-600 mt-4 font-medium">
+            يحتاج إعادة طلب
+          </p>
         </motion.div>
 
         <motion.div
@@ -173,7 +192,9 @@ const PharmacyDashboardSection = ({
               <FaExchangeAlt className="text-blue-700 text-xl" />
             </div>
           </div>
-          <p className="text-sm text-blue-600 mt-4 font-medium">من صيدليات أخرى</p>
+          <p className="text-sm text-blue-600 mt-4 font-medium">
+            من صيدليات أخرى
+          </p>
         </motion.div>
 
         <motion.div
@@ -197,7 +218,9 @@ const PharmacyDashboardSection = ({
           </div>
           <div className="mt-4 flex items-center">
             <FaChartLine className="text-green-600 text-sm ml-1" />
-            <p className="text-sm text-green-600 font-medium">+{stats.salesGrowth}% هذا الشهر</p>
+            <p className="text-sm text-green-600 font-medium">
+              +{stats.salesGrowth}% هذا الشهر
+            </p>
           </div>
         </motion.div>
 
@@ -220,7 +243,9 @@ const PharmacyDashboardSection = ({
               <FaBoxes className="text-purple-700 text-xl" />
             </div>
           </div>
-          <p className="text-sm text-purple-600 mt-4 font-medium">جنيه إجمالي</p>
+          <p className="text-sm text-purple-600 mt-4 font-medium">
+            جنيه إجمالي
+          </p>
         </motion.div>
       </motion.div>
 
@@ -237,86 +262,166 @@ const PharmacyDashboardSection = ({
               <FaCheckCircle className="text-teal-600 text-2xl" />
             </div>
             <div>
-              <p className="text-sm font-medium text-teal-700">الروشتات المكتملة اليوم</p>
-              <p className="text-4xl font-bold text-teal-900 mt-2">{stats.completedToday}</p>
+              <p className="text-sm font-medium text-teal-700">
+                الروشتات المكتملة اليوم
+              </p>
+              <p className="text-4xl font-bold text-teal-900 mt-2">
+                {stats.completedToday}
+              </p>
             </div>
           </div>
           <div className="text-left">
-            <p className="text-sm text-teal-600 font-medium">روشتة تم تجهيزها</p>
+            <p className="text-sm text-teal-600 font-medium">
+              روشتة تم تجهيزها
+            </p>
             <p className="text-xs text-teal-500 mt-1">أداء ممتاز اليوم! 🎉</p>
           </div>
         </div>
       </motion.div>
 
-      {/* Recent Prescriptions */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.7, ease: "easeOut" }}
-        className="bg-white rounded-xl shadow-sm border border-gray-100"
-      >
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">
-              الروشتات الحديثة
-            </h3>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setActiveSection("prescriptions")}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-            >
-              عرض الكل
-            </motion.button>
+      {/* Recent Prescriptions and Medicine Requests Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Prescriptions */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.7, ease: "easeOut" }}
+          className="bg-white rounded-xl shadow-sm border border-gray-100"
+        >
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">
+                الروشتات الحديثة
+              </h3>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setActiveSection("prescriptions")}
+                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              >
+                عرض الكل
+              </motion.button>
+            </div>
           </div>
-        </div>
-        <div className="p-6">
-          <AnimatePresence mode="popLayout">
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="space-y-4"
-            >
-              {prescriptions.slice(0, 3).map((prescription) => (
-                <motion.div
-                  key={prescription.id}
-                  layout
-                  variants={prescriptionCardVariants}
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex-1">
-                    <h4 className="font-medium text-gray-900">
-                      {prescription.patientName}
-                    </h4>
-                    <p className="text-sm text-gray-600">
-                      {prescription.doctorName}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {prescription.medicines.length} أدوية
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-3 space-x-reverse">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                        prescription.status
-                      )}`}
-                    >
-                      {prescription.status === "pending" && "في الانتظار"}
-                      {prescription.status === "processing" && "قيد التحضير"}
-                      {prescription.status === "completed" && "مكتملة"}
-                    </span>
-                    <span className="text-lg font-bold text-gray-900">
-                      {prescription.total.toFixed(2)} ج.م
-                    </span>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </motion.div>
+          <div className="p-6">
+            <AnimatePresence mode="popLayout">
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="space-y-4"
+              >
+                {prescriptions.slice(0, 3).map((prescription) => (
+                  <motion.div
+                    key={prescription.id}
+                    layout
+                    variants={prescriptionCardVariants}
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">
+                        {prescription.patientName}
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        {prescription.doctorName}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {prescription.medicines.length} أدوية
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-3 space-x-reverse">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                          prescription.status
+                        )}`}
+                      >
+                        {prescription.status === "pending" && "في الانتظار"}
+                        {prescription.status === "processing" && "قيد التحضير"}
+                        {prescription.status === "completed" && "مكتملة"}
+                      </span>
+                      <span className="text-lg font-bold text-gray-900">
+                        {prescription.total.toFixed(2)} ج.م
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </motion.div>
+
+        {/* Recent Medicine Requests */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.7, ease: "easeOut" }}
+          className="bg-white rounded-xl shadow-sm border border-gray-100"
+        >
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">
+                طلبات الأدوية الحديثة
+              </h3>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setActiveSection("medicine-requests")}
+                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              >
+                عرض الكل
+              </motion.button>
+            </div>
+          </div>
+          <div className="p-6">
+            <AnimatePresence mode="popLayout">
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="space-y-4"
+              >
+                {medicineRequests.slice(0, 3).map((request) => (
+                  <motion.div
+                    key={request.id}
+                    layout
+                    variants={prescriptionCardVariants}
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">
+                        {request.patientName}
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        {request.distance}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {request.medicines.length} أدوية
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-3 space-x-reverse">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          request.status === "pending"
+                            ? "bg-orange-100 text-orange-800"
+                            : request.status === "accepted"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {request.status === "pending" && "في الانتظار"}
+                        {request.status === "accepted" && "مقبول"}
+                        {request.status === "declined" && "مرفوض"}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 };

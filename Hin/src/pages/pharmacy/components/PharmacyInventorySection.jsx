@@ -2,6 +2,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaBoxes, FaExclamationTriangle, FaTimesCircle } from "react-icons/fa";
 import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
 
 const PharmacyInventorySection = ({
   inventory,
@@ -10,6 +11,8 @@ const PharmacyInventorySection = ({
   setShowOrderModal,
   getStockColor,
 }) => {
+  const navigate = useNavigate();
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -29,6 +32,16 @@ const PharmacyInventorySection = ({
     initial: { opacity: 0, y: 10 },
     animate: { opacity: 1, y: 0 },
     exit: { opacity: 0, x: -100, transition: { duration: 0.3 } },
+  };
+
+  const handleOrderClick = (itemName) => {
+    // Navigate to the order medicines page with the item name as state
+    navigate("/pharmacy-dashboard", {
+      state: {
+        activeSection: "order-medicines",
+        searchQuery: itemName,
+      },
+    });
   };
 
   return (
@@ -206,27 +219,56 @@ const PharmacyInventorySection = ({
                         whileTap={{ scale: 0.95 }}
                         onClick={() => {
                           Swal.fire({
-                            title: "أدخل الكمية الجديدة:",
-                            input: "number",
-                            inputValue: item.stock,
+                            title: "تحديث الكمية والسعر:",
+                            html: `
+                              <div style="text-align: right; margin-bottom: 10px;">
+                                <label>الكمية الجديدة:</label>
+                                <input type="number" id="stock" class="swal2-input" value="${item.stock}" min="0">
+                              </div>
+                              <div style="text-align: right; margin-bottom: 10px;">
+                                <label>السعر الجديد:</label>
+                                <input type="number" id="price" class="swal2-input" value="${item.price}" min="0" step="0.01">
+                              </div>
+                            `,
                             showCancelButton: true,
                             confirmButtonText: "تحديث",
                             cancelButtonText: "إلغاء",
-                            inputValidator: (value) => {
+                            preConfirm: () => {
+                              const stock =
+                                Swal.getPopup().querySelector("#stock").value;
+                              const price =
+                                Swal.getPopup().querySelector("#price").value;
                               if (
-                                !value ||
-                                isNaN(value) ||
-                                parseInt(value) < 0
+                                isNaN(stock) ||
+                                stock < 0 ||
+                                isNaN(price) ||
+                                price < 0
                               ) {
-                                return "الرجاء إدخال كمية صحيحة";
+                                Swal.showValidationMessage(
+                                  "الرجاء إدخال قيم صحيحة"
+                                );
+                                return false;
                               }
+                              return {
+                                stock: parseInt(stock),
+                                price: parseFloat(price),
+                              };
                             },
                           }).then((result) => {
                             if (result.isConfirmed) {
-                              handleInventoryUpdate(
-                                item.id,
-                                parseInt(result.value)
-                              );
+                              // Update both stock and price
+                              const updatedItem = {
+                                ...item,
+                                stock: result.value.stock,
+                                price: result.value.price,
+                                status:
+                                  result.value.stock === 0
+                                    ? "out"
+                                    : result.value.stock <= item.minStock
+                                    ? "low"
+                                    : "good",
+                              };
+                              handleInventoryUpdate(item.id, updatedItem);
                             }
                           });
                         }}
@@ -236,7 +278,7 @@ const PharmacyInventorySection = ({
                       </motion.button>
                       <motion.button
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => setShowOrderModal(true)}
+                        onClick={() => handleOrderClick(item.name)}
                         className="text-green-600 hover:text-green-900"
                       >
                         طلب

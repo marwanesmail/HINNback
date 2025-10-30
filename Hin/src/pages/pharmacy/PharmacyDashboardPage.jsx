@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import DashboardLayout from "../../components/Layout/DashboardLayout";
 import {
   getPharmacyRequests,
@@ -46,6 +46,7 @@ import {
 } from "../../utils/dashboardSearch";
 
 const PharmacyDashboardPage = () => {
+  const location = useLocation();
   const contentRef = useRef(null);
   const [activeSection, setActiveSection] = useState("dashboard");
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -245,6 +246,15 @@ const PharmacyDashboardPage = () => {
       type: "report",
     },
   ];
+
+  // Effect to handle navigation state
+  useEffect(() => {
+    if (location.state && location.state.activeSection) {
+      setActiveSection(location.state.activeSection);
+      // Clear the location state after using it
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Load notifications
   useEffect(() => {
@@ -446,23 +456,41 @@ const PharmacyDashboardPage = () => {
   // نوع البيانات المطلوبة: path param { itemId }, body { stock }
   // Headers: Content-Type: application/json, Authorization: Bearer {token}
   // البيانات الراجعة: { success: true, item: { id, name, stock, minStock, expiry, price, status } }
-  const handleInventoryUpdate = (itemId, newStock) => {
-    setInventory((prev) =>
-      prev.map((item) =>
-        item.id === itemId
-          ? {
-              ...item,
-              stock: newStock,
-              status:
-                newStock === 0
-                  ? "out"
-                  : newStock <= item.minStock
-                  ? "low"
-                  : "good",
-            }
-          : item
-      )
-    );
+  const handleInventoryUpdate = (itemId, updatedItem) => {
+    // If updatedItem is an object with both stock and price, use it directly
+    // Otherwise, maintain backward compatibility with just stock value
+    if (typeof updatedItem === "object" && updatedItem !== null) {
+      setInventory((prev) =>
+        prev.map((item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                stock: updatedItem.stock,
+                price: updatedItem.price,
+                status: updatedItem.status,
+              }
+            : item
+        )
+      );
+    } else {
+      // Backward compatibility for stock-only updates
+      setInventory((prev) =>
+        prev.map((item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                stock: updatedItem,
+                status:
+                  updatedItem === 0
+                    ? "out"
+                    : updatedItem <= item.minStock
+                    ? "low"
+                    : "good",
+              }
+            : item
+        )
+      );
+    }
     showNotification("تم تحديث المخزون بنجاح");
   };
 

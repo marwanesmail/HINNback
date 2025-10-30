@@ -13,121 +13,128 @@ import { motion, AnimatePresence } from "framer-motion";
 const MedicineCompanySearch = ({
   onSelect,
   placeholder = "ابحث عن دواء أو شركة...",
+  initialSearchQuery = "", // Added prop for initial search query
 }) => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(initialSearchQuery);
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const searchRef = useRef(null);
 
-  // استبدال البيانات الوهمية ببيانات من localStorage
-  const getMedicineData = () => {
-    // هنا هيكون ربط بالباك اند بعدين
-    // البيانات ستُحفظ في localStorage
-    const storedData = localStorage.getItem("medicineCompanyData");
-    if (storedData) {
-      return JSON.parse(storedData);
-    }
-
-    // بيانات افتراضية إذا لم توجد بيانات في localStorage
-    const defaultData = [
-      {
-        id: 1,
-        medicineName: "بانادول",
-        companyName: "شركة جلاكسو سميث كلاين",
-        offer: "خصم 15% على الكمية أكثر من 50 علبة",
-        price: 12.5,
-        originalPrice: 15.0,
-        category: "مسكنات",
-        inStock: true,
-        minQuantity: 10,
-      },
-      {
-        id: 2,
-        medicineName: "أسبرين",
-        companyName: "شركة باير",
-        offer: "اشتري 3 واحصل على 1 مجاناً",
-        price: 8.0,
-        originalPrice: 10.0,
-        category: "مسكنات",
-        inStock: true,
-        minQuantity: 20,
-      },
-      {
-        id: 3,
-        medicineName: "فيتامين د",
-        companyName: "شركة فايزر",
-        offer: "خصم 20% لفترة محدودة",
-        price: 25.0,
-        originalPrice: 31.25,
-        category: "فيتامينات",
-        inStock: true,
-        minQuantity: 5,
-      },
-      {
-        id: 4,
-        medicineName: "أوميجا 3",
-        companyName: "شركة نوفارتيس",
-        offer: null,
-        price: 45.0,
-        originalPrice: 45.0,
-        category: "مكملات غذائية",
-        inStock: true,
-        minQuantity: 15,
-      },
-      {
-        id: 5,
-        medicineName: "كونجستال",
-        companyName: "شركة إيفا فارما",
-        offer: "خصم 10% على الطلبات أكثر من 100 علبة",
-        price: 6.5,
-        originalPrice: 7.2,
-        category: "أدوية البرد",
-        inStock: true,
-        minQuantity: 25,
-      },
-      {
-        id: 6,
-        medicineName: "أنتينال",
-        companyName: "شركة كاهيرا فارما",
-        offer: "عرض خاص: خصم 25%",
-        price: 18.75,
-        originalPrice: 25.0,
-        category: "أدوية الجهاز الهضمي",
-        inStock: false,
-        minQuantity: 30,
-      },
-      {
-        id: 7,
-        medicineName: "فلوتاب",
-        companyName: "شركة جلاكسو سميث كلاين",
-        offer: "خصم 12% + شحن مجاني",
-        price: 14.0,
-        originalPrice: 16.0,
-        category: "أدوية البرد",
-        inStock: true,
-        minQuantity: 20,
-      },
-      {
-        id: 8,
-        medicineName: "زنك",
-        companyName: "شركة فايزر",
-        offer: null,
-        price: 22.0,
-        originalPrice: 22.0,
-        category: "فيتامينات",
-        inStock: true,
-        minQuantity: 12,
-      },
-    ];
-
-    // حفظ البيانات الافتراضية في localStorage
-    localStorage.setItem("medicineCompanyData", JSON.stringify(defaultData));
-    return defaultData;
-  };
-
-  const [medicineData, setMedicineData] = useState(getMedicineData());
+  // بيانات وهمية بسيطة لشركات الأدوية والأدوية
+  const medicineData = [
+    {
+      id: 1,
+      medicineName: "باراسيتامول 500mg",
+      companyName: "شركة الدواء الوطني",
+      offer: "خصم 10% على الطلبات أكثر من 100 علبة",
+      price: 12.5,
+      originalPrice: 15.0,
+      category: "مسكنات",
+      inStock: true,
+      minQuantity: 10,
+    },
+    {
+      id: 2,
+      medicineName: "أموكسيسيلين 250mg",
+      companyName: "شركة فارما الشرق الأوسط",
+      offer: "اشتري 5 واحصل على 1 مجاناً",
+      price: 25.0,
+      originalPrice: 30.0,
+      category: "مضادات حيوية",
+      inStock: true,
+      minQuantity: 20,
+    },
+    {
+      id: 3,
+      medicineName: "إيبوبروفين 400mg",
+      companyName: "شركة الدواء العربي",
+      offer: "خصم 15% لفترة محدودة",
+      price: 18.75,
+      originalPrice: 22.0,
+      category: "مسكنات",
+      inStock: true,
+      minQuantity: 15,
+    },
+    {
+      id: 4,
+      medicineName: "فيتامين د3",
+      companyName: "شركة نيوتراليف",
+      offer: null,
+      price: 35.0,
+      originalPrice: 35.0,
+      category: "فيتامينات",
+      inStock: true,
+      minQuantity: 5,
+    },
+    {
+      id: 5,
+      medicineName: "أوميغا 3",
+      companyName: "شركة أوميغا فارما",
+      offer: "خصم 20% على الكمية أكثر من 30 علبة",
+      price: 45.0,
+      originalPrice: 55.0,
+      category: "مكملات غذائية",
+      inStock: true,
+      minQuantity: 10,
+    },
+    {
+      id: 6,
+      medicineName: "كلاريتين",
+      companyName: "شركة جونسون آند جونسون",
+      offer: "عرض خاص: خصم 12%",
+      price: 28.5,
+      originalPrice: 32.0,
+      category: "أدوية الحساسية",
+      inStock: true,
+      minQuantity: 12,
+    },
+    {
+      id: 7,
+      medicineName: "زولفيد",
+      companyName: "شركة الدواء الشامل",
+      offer: "شحن مجاني على الطلبات أكثر من 200 جنية",
+      price: 22.0,
+      originalPrice: 25.0,
+      category: "أدوية الجهاز التنفسي",
+      inStock: false,
+      minQuantity: 25,
+    },
+    {
+      id: 8,
+      medicineName: "ديجيستيل",
+      companyName: "شركة فارما كير",
+      offer: null,
+      price: 19.5,
+      originalPrice: 19.5,
+      category: "أدوية الجهاز الهضمي",
+      inStock: true,
+      minQuantity: 15,
+    },
+    {
+      id: 9,
+      medicineName: "سيريتيدا",
+      companyName: "شركة الدواء الحديث",
+      offer: "خصم 18% على الطلبات أكثر من 50 علبة",
+      price: 33.0,
+      originalPrice: 40.0,
+      category: "أدوية الحساسية",
+      inStock: true,
+      minQuantity: 8,
+    },
+    {
+      id: 10,
+      medicineName: "أسبرين كardio",
+      companyName: "شركة باير العالمية",
+      offer: "اشتري 3 واحصل على 1 مجاناً",
+      price: 15.75,
+      originalPrice: 20.0,
+      category: "مسكنات",
+      inStock: true,
+      minQuantity: 30,
+    },
+  ];
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -141,9 +148,6 @@ const MedicineCompanySearch = ({
   }, []);
 
   useEffect(() => {
-    // تحديث البيانات من localStorage
-    setMedicineData(getMedicineData());
-
     if (searchTerm.length >= 2) {
       setIsLoading(true);
       const timer = setTimeout(() => {
@@ -165,7 +169,35 @@ const MedicineCompanySearch = ({
       setShowSuggestions(false);
       setSelectedIndex(-1);
     }
-  }, [searchTerm, medicineData]);
+  }, [searchTerm]);
+
+  // Effect to handle initial search query
+  useEffect(() => {
+    if (initialSearchQuery) {
+      setSearchTerm(initialSearchQuery);
+      // Automatically trigger search if the initial query is long enough
+      if (initialSearchQuery.length >= 2) {
+        const timer = setTimeout(() => {
+          const filtered = medicineData.filter(
+            (item) =>
+              item.medicineName
+                .toLowerCase()
+                .includes(initialSearchQuery.toLowerCase()) ||
+              item.companyName
+                .toLowerCase()
+                .includes(initialSearchQuery.toLowerCase()) ||
+              item.category
+                .toLowerCase()
+                .includes(initialSearchQuery.toLowerCase())
+          );
+          setSuggestions(filtered);
+          setShowSuggestions(true);
+          setIsLoading(false);
+        }, 300);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [initialSearchQuery]);
 
   const handleInputChange = (e) => {
     setSearchTerm(e.target.value);

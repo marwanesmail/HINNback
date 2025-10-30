@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import MedicineCompanySearch from "../../../components/Pharmacy/MedicineCompanySearch";
 import {
   FaCheck,
@@ -32,51 +32,60 @@ const itemVariants = {
 // Variants لبطاقات الأدوية داخل ملخص الطلب (الهدف هو محاكاة حركة بطاقات التبادل)
 const summaryItemVariants = {
   initial: { opacity: 0, scale: 0.8 },
-  animate: { 
-    opacity: 1, 
-    scale: 1, 
-    transition: { type: "spring", stiffness: 300, damping: 20 } 
+  animate: {
+    opacity: 1,
+    scale: 1,
+    transition: { type: "spring", stiffness: 300, damping: 20 },
   },
-  exit: { 
-    opacity: 0, 
-    x: 100, 
-    transition: { duration: 0.3 } 
+  exit: {
+    opacity: 0,
+    x: 100,
+    transition: { duration: 0.3 },
   },
 };
 
 const AddPanelVariants = {
   initial: { opacity: 0, height: 0, padding: 0 },
-  animate: { 
-    opacity: 1, 
-    height: "auto", 
+  animate: {
+    opacity: 1,
+    height: "auto",
     padding: "1.5rem", // p-6
     transition: {
       opacity: { duration: 0.3, delay: 0.1 },
       height: { duration: 0.4 },
       padding: { duration: 0.4 },
-    }
+    },
   },
-  exit: { 
-    opacity: 0, 
-    height: 0, 
+  exit: {
+    opacity: 0,
+    height: 0,
     padding: 0,
-    transition: { 
+    transition: {
       opacity: { duration: 0.2 },
       height: { duration: 0.3 },
       padding: { duration: 0.3 },
-    }
+    },
   },
 };
 
 // --------------------------------------------------------------------------
 
 const PharmacyOrderMedicinesPage = () => {
+  const location = useLocation();
   const [selectedMedicines, setSelectedMedicines] = useState([]);
   const [currentSelection, setCurrentSelection] = useState(null);
   const [quantity, setQuantity] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showOrderSummary, setShowOrderSummary] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Effect to handle search query from navigation state
+  useEffect(() => {
+    if (location.state && location.state.searchQuery) {
+      setSearchQuery(location.state.searchQuery);
+    }
+  }, [location.state]);
 
   const handleMedicineSelect = (medicine) => {
     setCurrentSelection(medicine);
@@ -130,10 +139,7 @@ const PharmacyOrderMedicinesPage = () => {
     const updated = selectedMedicines.map((item) => {
       if (item.id === medicineId) {
         // التحقق من الحد الأدنى للكمية قبل التحديث
-        const newQty = Math.max(
-          parseInt(newQuantity) || 0,
-          item.minQuantity
-        );
+        const newQty = Math.max(parseInt(newQuantity) || 0, item.minQuantity);
 
         return {
           ...item,
@@ -254,6 +260,7 @@ const PharmacyOrderMedicinesPage = () => {
               <MedicineCompanySearch
                 onSelect={handleMedicineSelect}
                 placeholder="ابحث عن دواء أو شركة أو فئة..."
+                initialSearchQuery={searchQuery}
               />
 
               <div className="mt-4 text-gray-500 text-sm space-y-1">
@@ -413,8 +420,15 @@ const PharmacyOrderMedicinesPage = () => {
                         animate="animate"
                         exit="exit"
                         // حركة عند التفاعل مشابهة لبطاقات التبادل
-                        whileHover={{ scale: 1.01, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}
-                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                        whileHover={{
+                          scale: 1.01,
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                        }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 25,
+                        }}
                         className="border border-gray-200 rounded-xl p-3 flex flex-col gap-2 relative"
                       >
                         <div className="flex justify-between items-center">
