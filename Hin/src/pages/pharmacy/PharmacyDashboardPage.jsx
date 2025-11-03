@@ -111,6 +111,8 @@ const PharmacyDashboardPage = () => {
   const pharmacyData = {
     name: "صيدلية الشفاء",
     branch: "فرع المدينة",
+    manager: "د/أحمد محمد",
+    // username: "ahmed_pharmacy",
     points: 2450,
     totalSales: 125000,
     monthlyOrders: 89,

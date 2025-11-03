@@ -30,20 +30,66 @@ const Sidebar = ({
       className={`w-64 h-screen shadow-lg border-r border-gray-200 flex flex-col ${sidebarColor}`}
     >
       {/* Profile Section */}
-      <div className="flex flex-col items-center text-center px-4 py-6 border-b">
-        {profileData.type === "company" ? (
-          <div className="w-16 h-16 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md mb-3">
-            <FaBuilding size={28} />
+      <div
+        className={`flex items-center gap-4 px-5 py-5 rounded-xl border-b shadow-xl transition-all duration-300 ${
+          profileData.type === "doctor"
+            ? "bg-gradient-to-r from-[#1E3A8A] via-[#1E40AF] to-[#2563EB] border-blue-900"
+            : profileData.type === "pharmacy"
+            ? "bg-gradient-to-r from-[#14532D] via-[#166534] to-[#22C55E] border-green-900"
+            : profileData.type === "company"
+            ? "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white border border-gray-700 shadow-lg shadow-gray-700/50"
+            : profileData.type === "patient"
+            ? "bg-gradient-to-r from-[#581C87] via-[#6B21A8] to-[#9333EA] border-purple-900"
+            : "bg-gradient-to-r from-gray-800 to-gray-900 border-gray-700"
+        }`}
+      >
+        {/* Icon */}
+        <div
+          className={`relative w-14 h-14 flex items-center justify-center rounded-full shadow-[0_0_15px_rgba(0,0,0,0.4)] overflow-hidden 
+    before:content-[''] before:absolute before:inset-0 before:rounded-full before:bg-white/10 before:blur-sm`}
+        >
+          <div
+            className={`w-full h-full flex items-center justify-center rounded-full ${
+              profileData.type === "doctor"
+                ? "bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] text-white"
+                : profileData.type === "pharmacy"
+                ? "bg-gradient-to-r from-[#166534] to-[#22C55E] text-white"
+                : profileData.type === "company"
+                ? "bg-gradient-to-r from-[#111827] to-[#374151] text-white"
+                : profileData.type === "patient"
+                ? "bg-gradient-to-r from-[#6B21A8] to-[#9333EA] text-white"
+                : "bg-gradient-to-r from-green-500 to-teal-500 text-black"
+            }`}
+          >
+            {profileData.type === "company" ? (
+              <FaBuilding size={26} />
+            ) : (
+              <FaUser size={26} />
+            )}
           </div>
-        ) : (
-          <div className="w-16 h-16 flex items-center justify-center rounded-full bg-gradient-to-r from-green-500 to-teal-500 text-black shadow-md mb-3">
-            <FaUser size={28} />
-          </div>
-        )}
-        <h3 className={`text-lg font-semibold ${textColor}`}>
-          {profileData.name}
-        </h3>
-        <p className="text-sm text-white">{profileData.description}</p>
+        </div>
+
+        {/* Info */}
+        <div className="flex flex-col">
+          <h3 className="text-lg font-semibold text-white drop-shadow-sm">
+            {profileData.name}
+          </h3>
+          <p className="text-sm text-gray-200 opacity-90 mt-0.5">
+            {profileData.type === "doctor"
+              ? `${profileData.clinicName || "لم يتم تحديد العيادة"}`
+              : profileData.type === "pharmacy"
+              ? `مدير ${profileData.manager || "لم يتم تحديد المدير"}`
+              : profileData.type === "company"
+              ? `${
+                  profileData.businessType ||
+                  profileData.activity ||
+                  "نوع النشاط التجاري"
+                }`
+              : profileData.type === "patient"
+              ? "مريض"
+              : ""}
+          </p>
+        </div>
       </div>
 
       {/* Menu Section */}
@@ -68,9 +114,19 @@ const Sidebar = ({
                   onMenuItemClick(item.id, item.dataSection, item.path);
                 }
               }}
-              className={`flex items-center gap-4 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+              className={`flex items-center gap-4 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
                 isActive
-                  ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md"
+                  ? `${
+                      profileData.type === "doctor"
+                        ? "bg-gradient-to-r from-blue-900 via-blue-700 to-blue-500 text-white shadow-lg shadow-blue-500/40"
+                        : profileData.type === "company"
+                        ? "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-600 text-white shadow-lg shadow-gray-600/40"
+                        : profileData.type === "pharmacy"
+                        ? "bg-gradient-to-r from-green-900 via-green-700 to-green-500 text-white shadow-lg shadow-green-500/40"
+                        : profileData.type === "patient"
+                        ? "bg-gradient-to-r from-purple-900 via-purple-700 to-purple-500 text-white shadow-lg shadow-purple-500/40"
+                        : "bg-gradient-to-r from-blue-700 to-purple-600 text-white shadow-lg"
+                    }`
                   : `${textColor} hover:bg-gray-700`
               }`}
             >

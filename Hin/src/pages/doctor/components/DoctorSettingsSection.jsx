@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   FaUser,
@@ -25,7 +25,7 @@ import {
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 
-const DoctorSettingsSection = () => {
+const DoctorSettingsSection = ({ updateDoctorData, doctorData }) => {
   const [activeTab, setActiveTab] = useState("personal");
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingPersonal, setIsEditingPersonal] = useState(false);
@@ -49,16 +49,66 @@ const DoctorSettingsSection = () => {
     sessionDuration: "30", // minutes
   });
 
+  // Update clinic info when doctorData changes
+  useEffect(() => {
+    if (doctorData && doctorData.clinicName) {
+      setClinicInfo((prev) => ({
+        ...prev,
+        clinicName: doctorData.clinicName,
+      }));
+    }
+  }, [doctorData]);
+
   // Schedule State - Date and Time Based
   const timeSlots = [
-    "12:00 ص", "12:30 ص", "01:00 ص", "01:30 ص", "02:00 ص", "02:30 ص",
-    "03:00 ص", "03:30 ص", "04:00 ص", "04:30 ص", "05:00 ص", "05:30 ص",
-    "06:00 ص", "06:30 ص", "07:00 ص", "07:30 ص", "08:00 ص", "08:30 ص",
-    "09:00 ص", "09:30 ص", "10:00 ص", "10:30 ص", "11:00 ص", "11:30 ص",
-    "12:00 م", "12:30 م", "01:00 م", "01:30 م", "02:00 م", "02:30 م",
-    "03:00 م", "03:30 م", "04:00 م", "04:30 م", "05:00 م", "05:30 م",
-    "06:00 م", "06:30 م", "07:00 م", "07:30 م", "08:00 م", "08:30 م",
-    "09:00 م", "09:30 م", "10:00 م", "10:30 م", "11:00 م", "11:30 م"
+    "12:00 ص",
+    "12:30 ص",
+    "01:00 ص",
+    "01:30 ص",
+    "02:00 ص",
+    "02:30 ص",
+    "03:00 ص",
+    "03:30 ص",
+    "04:00 ص",
+    "04:30 ص",
+    "05:00 ص",
+    "05:30 ص",
+    "06:00 ص",
+    "06:30 ص",
+    "07:00 ص",
+    "07:30 ص",
+    "08:00 ص",
+    "08:30 ص",
+    "09:00 ص",
+    "09:30 ص",
+    "10:00 ص",
+    "10:30 ص",
+    "11:00 ص",
+    "11:30 ص",
+    "12:00 م",
+    "12:30 م",
+    "01:00 م",
+    "01:30 م",
+    "02:00 م",
+    "02:30 م",
+    "03:00 م",
+    "03:30 م",
+    "04:00 م",
+    "04:30 م",
+    "05:00 م",
+    "05:30 م",
+    "06:00 م",
+    "06:30 م",
+    "07:00 م",
+    "07:30 م",
+    "08:00 م",
+    "08:30 م",
+    "09:00 م",
+    "09:30 م",
+    "10:00 م",
+    "10:30 م",
+    "11:00 م",
+    "11:30 م",
   ];
 
   const [appointments, setAppointments] = useState([]);
@@ -86,29 +136,34 @@ const DoctorSettingsSection = () => {
   // Get today's date in YYYY-MM-DD format
   const getTodayDate = () => {
     const today = new Date();
-    return today.toISOString().split('T')[0];
+    return today.toISOString().split("T")[0];
   };
 
   // Format date to Arabic
   const formatDateToArabic = (dateString) => {
     const date = new Date(dateString);
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    return date.toLocaleDateString('ar-EG', options);
+    const options = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    };
+    return date.toLocaleDateString("ar-EG", options);
   };
 
   // Calculate work duration in hours
   const calculateWorkDuration = (startTime, endTime) => {
     if (!startTime || !endTime) return "-";
-    
+
     const startIndex = timeSlots.indexOf(startTime);
     const endIndex = timeSlots.indexOf(endTime);
     const slots = endIndex - startIndex;
-    
+
     if (slots <= 0) return "-";
-    
+
     const hours = Math.floor(slots / 2);
     const minutes = (slots % 2) * 30;
-    
+
     if (minutes === 0) {
       return `${hours} ساعة`;
     }
@@ -129,7 +184,7 @@ const DoctorSettingsSection = () => {
     // Validate end time is after start time
     const startIndex = timeSlots.indexOf(selectedStartTime);
     const endIndex = timeSlots.indexOf(selectedEndTime);
-    
+
     if (endIndex <= startIndex) {
       Swal.fire({
         icon: "error",
@@ -140,7 +195,7 @@ const DoctorSettingsSection = () => {
     }
 
     // Check if this date already exists
-    const exists = appointments.some(apt => apt.date === selectedDate);
+    const exists = appointments.some((apt) => apt.date === selectedDate);
 
     if (exists) {
       Swal.fire({
@@ -187,7 +242,7 @@ const DoctorSettingsSection = () => {
       cancelButtonText: "إلغاء",
     }).then((result) => {
       if (result.isConfirmed) {
-        setAppointments(appointments.filter(apt => apt.id !== id));
+        setAppointments(appointments.filter((apt) => apt.id !== id));
         Swal.fire({
           icon: "success",
           title: "تم الحذف",
@@ -201,21 +256,25 @@ const DoctorSettingsSection = () => {
 
   // Toggle appointment availability
   const toggleAppointmentAvailability = (id) => {
-    setAppointments(appointments.map(apt => 
-      apt.id === id ? { ...apt, available: !apt.available } : apt
-    ));
+    setAppointments(
+      appointments.map((apt) =>
+        apt.id === id ? { ...apt, available: !apt.available } : apt
+      )
+    );
   };
 
   // Update appointment time range
   const updateAppointmentTime = (id, field, value) => {
-    setAppointments(appointments.map(apt => 
-      apt.id === id ? { ...apt, [field]: value } : apt
-    ));
+    setAppointments(
+      appointments.map((apt) =>
+        apt.id === id ? { ...apt, [field]: value } : apt
+      )
+    );
   };
 
   // Sort appointments by date
-  const sortedAppointments = [...appointments].sort((a, b) => 
-    new Date(a.date) - new Date(b.date)
+  const sortedAppointments = [...appointments].sort(
+    (a, b) => new Date(a.date) - new Date(b.date)
   );
 
   // Save Personal Info
@@ -263,6 +322,11 @@ const DoctorSettingsSection = () => {
 
     // TODO: API call here
     setTimeout(() => {
+      // Update doctor data with new clinic name
+      if (updateDoctorData) {
+        updateDoctorData({ clinicName: clinicInfo.clinicName });
+      }
+
       setIsSaving(false);
       setIsEditingClinic(false);
       Swal.fire({
@@ -356,8 +420,12 @@ const DoctorSettingsSection = () => {
                 <FaUserMd className="text-blue-600 text-lg sm:text-xl" />
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900">المعلومات الشخصية</h2>
-                <p className="text-xs sm:text-sm text-gray-600">إدارة معلوماتك الشخصية والمهنية</p>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                  المعلومات الشخصية
+                </h2>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  إدارة معلوماتك الشخصية والمهنية
+                </p>
               </div>
             </div>
 
@@ -371,7 +439,9 @@ const DoctorSettingsSection = () => {
                 <input
                   type="text"
                   value={personalInfo.fullName}
-                  onChange={(e) => handlePersonalInfoChange("fullName", e.target.value)}
+                  onChange={(e) =>
+                    handlePersonalInfoChange("fullName", e.target.value)
+                  }
                   disabled={!isEditingPersonal}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                     isEditingPersonal
@@ -390,7 +460,9 @@ const DoctorSettingsSection = () => {
                 </label>
                 <select
                   value={personalInfo.specialization}
-                  onChange={(e) => handlePersonalInfoChange("specialization", e.target.value)}
+                  onChange={(e) =>
+                    handlePersonalInfoChange("specialization", e.target.value)
+                  }
                   disabled={!isEditingPersonal}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                     isEditingPersonal
@@ -405,7 +477,9 @@ const DoctorSettingsSection = () => {
                   <option value="طب النساء والتوليد">طب النساء والتوليد</option>
                   <option value="الجراحة العامة">الجراحة العامة</option>
                   <option value="طب القلب">طب القلب</option>
-                  <option value="طب الأنف والأذن والحنجرة">طب الأنف والأذن والحنجرة</option>
+                  <option value="طب الأنف والأذن والحنجرة">
+                    طب الأنف والأذن والحنجرة
+                  </option>
                   <option value="الطب النفسي">الطب النفسي</option>
                   <option value="طب الجلدية">طب الجلدية</option>
                 </select>
@@ -420,7 +494,12 @@ const DoctorSettingsSection = () => {
                 <input
                   type="number"
                   value={personalInfo.yearsOfExperience}
-                  onChange={(e) => handlePersonalInfoChange("yearsOfExperience", e.target.value)}
+                  onChange={(e) =>
+                    handlePersonalInfoChange(
+                      "yearsOfExperience",
+                      e.target.value
+                    )
+                  }
                   disabled={!isEditingPersonal}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                     isEditingPersonal
@@ -441,7 +520,9 @@ const DoctorSettingsSection = () => {
                 </label>
                 <textarea
                   value={personalInfo.bio}
-                  onChange={(e) => handlePersonalInfoChange("bio", e.target.value)}
+                  onChange={(e) =>
+                    handlePersonalInfoChange("bio", e.target.value)
+                  }
                   disabled={!isEditingPersonal}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                     isEditingPersonal
@@ -488,8 +569,12 @@ const DoctorSettingsSection = () => {
                     className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all duration-200 shadow-md disabled:opacity-50 text-sm sm:text-base"
                   >
                     <FaSave />
-                    <span className="hidden sm:inline">{isSaving ? "جاري الحفظ..." : "حفظ التغييرات"}</span>
-                    <span className="inline sm:hidden">{isSaving ? "جاري..." : "حفظ"}</span>
+                    <span className="hidden sm:inline">
+                      {isSaving ? "جاري الحفظ..." : "حفظ التغييرات"}
+                    </span>
+                    <span className="inline sm:hidden">
+                      {isSaving ? "جاري..." : "حفظ"}
+                    </span>
                   </motion.button>
                 </>
               )}
@@ -505,8 +590,12 @@ const DoctorSettingsSection = () => {
                 <FaHospital className="text-green-600 text-lg sm:text-xl" />
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900">معلومات العيادة</h2>
-                <p className="text-xs sm:text-sm text-gray-600">إدارة تفاصيل عيادتك</p>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                  معلومات العيادة
+                </h2>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  إدارة تفاصيل عيادتك
+                </p>
               </div>
             </div>
 
@@ -520,7 +609,9 @@ const DoctorSettingsSection = () => {
                 <input
                   type="text"
                   value={clinicInfo.clinicName}
-                  onChange={(e) => handleClinicInfoChange("clinicName", e.target.value)}
+                  onChange={(e) =>
+                    handleClinicInfoChange("clinicName", e.target.value)
+                  }
                   disabled={!isEditingClinic}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${
                     isEditingClinic
@@ -540,7 +631,9 @@ const DoctorSettingsSection = () => {
                 <input
                   type="text"
                   value={clinicInfo.address}
-                  onChange={(e) => handleClinicInfoChange("address", e.target.value)}
+                  onChange={(e) =>
+                    handleClinicInfoChange("address", e.target.value)
+                  }
                   disabled={!isEditingClinic}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${
                     isEditingClinic
@@ -560,7 +653,9 @@ const DoctorSettingsSection = () => {
                 <input
                   type="tel"
                   value={clinicInfo.phone}
-                  onChange={(e) => handleClinicInfoChange("phone", e.target.value)}
+                  onChange={(e) =>
+                    handleClinicInfoChange("phone", e.target.value)
+                  }
                   disabled={!isEditingClinic}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${
                     isEditingClinic
@@ -580,7 +675,9 @@ const DoctorSettingsSection = () => {
                 <input
                   type="number"
                   value={clinicInfo.consultationFee}
-                  onChange={(e) => handleClinicInfoChange("consultationFee", e.target.value)}
+                  onChange={(e) =>
+                    handleClinicInfoChange("consultationFee", e.target.value)
+                  }
                   disabled={!isEditingClinic}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${
                     isEditingClinic
@@ -600,7 +697,9 @@ const DoctorSettingsSection = () => {
                 </label>
                 <select
                   value={clinicInfo.consultationType}
-                  onChange={(e) => handleClinicInfoChange("consultationType", e.target.value)}
+                  onChange={(e) =>
+                    handleClinicInfoChange("consultationType", e.target.value)
+                  }
                   disabled={!isEditingClinic}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${
                     isEditingClinic
@@ -622,7 +721,9 @@ const DoctorSettingsSection = () => {
                 </label>
                 <select
                   value={clinicInfo.sessionDuration}
-                  onChange={(e) => handleClinicInfoChange("sessionDuration", e.target.value)}
+                  onChange={(e) =>
+                    handleClinicInfoChange("sessionDuration", e.target.value)
+                  }
                   disabled={!isEditingClinic}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${
                     isEditingClinic
@@ -669,8 +770,12 @@ const DoctorSettingsSection = () => {
                     className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all duration-200 shadow-md disabled:opacity-50 text-sm sm:text-base"
                   >
                     <FaSave />
-                    <span className="hidden sm:inline">{isSaving ? "جاري الحفظ..." : "حفظ التغييرات"}</span>
-                    <span className="inline sm:hidden">{isSaving ? "جاري..." : "حفظ"}</span>
+                    <span className="hidden sm:inline">
+                      {isSaving ? "جاري الحفظ..." : "حفظ التغييرات"}
+                    </span>
+                    <span className="inline sm:hidden">
+                      {isSaving ? "جاري..." : "حفظ"}
+                    </span>
                   </motion.button>
                 </>
               )}
@@ -687,8 +792,12 @@ const DoctorSettingsSection = () => {
                   <FaCalendarAlt className="text-purple-600 text-lg sm:text-xl" />
                 </div>
                 <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">إدارة المواعيد</h2>
-                  <p className="text-xs sm:text-sm text-gray-600">أضف مواعيدك المتاحة بالتاريخ والوقت</p>
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                    إدارة المواعيد
+                  </h2>
+                  <p className="text-xs sm:text-sm text-gray-600">
+                    أضف مواعيدك المتاحة بالتاريخ والوقت
+                  </p>
                 </div>
               </div>
               <button
@@ -737,7 +846,9 @@ const DoctorSettingsSection = () => {
                     >
                       <option value="">-- اختر البداية --</option>
                       {timeSlots.map((time) => (
-                        <option key={time} value={time}>{time}</option>
+                        <option key={time} value={time}>
+                          {time}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -757,7 +868,9 @@ const DoctorSettingsSection = () => {
                     >
                       <option value="">-- اختر النهاية --</option>
                       {timeSlots.map((time) => (
-                        <option key={time} value={time}>{time}</option>
+                        <option key={time} value={time}>
+                          {time}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -766,7 +879,11 @@ const DoctorSettingsSection = () => {
                   <div className="mb-4 flex items-center gap-2 bg-indigo-100 px-4 py-2 rounded-lg">
                     <FaClock className="text-indigo-600" />
                     <span className="text-sm font-semibold text-indigo-900">
-                      مدة العمل: {calculateWorkDuration(selectedStartTime, selectedEndTime)}
+                      مدة العمل:{" "}
+                      {calculateWorkDuration(
+                        selectedStartTime,
+                        selectedEndTime
+                      )}
                     </span>
                   </div>
                 )}
@@ -799,8 +916,12 @@ const DoctorSettingsSection = () => {
             {appointments.length === 0 ? (
               <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
                 <FaCalendarAlt className="mx-auto text-6xl text-gray-300 mb-4" />
-                <p className="text-gray-500 text-lg font-medium">لا توجد مواعيد متاحة</p>
-                <p className="text-gray-400 text-sm mt-2">اضغط على "إضافة موعد جديد" لإضافة مواعيدك</p>
+                <p className="text-gray-500 text-lg font-medium">
+                  لا توجد مواعيد متاحة
+                </p>
+                <p className="text-gray-400 text-sm mt-2">
+                  اضغط على "إضافة موعد جديد" لإضافة مواعيدك
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -820,14 +941,20 @@ const DoctorSettingsSection = () => {
                           <input
                             type="checkbox"
                             checked={apt.available}
-                            onChange={() => toggleAppointmentAvailability(apt.id)}
+                            onChange={() =>
+                              toggleAppointmentAvailability(apt.id)
+                            }
                             className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500 cursor-pointer flex-shrink-0"
                           />
-                          
+
                           {/* Date Display */}
-                          <div className={`font-bold text-base sm:text-lg flex-1 lg:min-w-[200px] xl:min-w-[250px] ${
-                            apt.available ? "text-purple-900" : "text-gray-400"
-                          }`}>
+                          <div
+                            className={`font-bold text-base sm:text-lg flex-1 lg:min-w-[200px] xl:min-w-[250px] ${
+                              apt.available
+                                ? "text-purple-900"
+                                : "text-gray-400"
+                            }`}
+                          >
                             {formatDateToArabic(apt.date)}
                           </div>
                         </div>
@@ -837,31 +964,53 @@ const DoctorSettingsSection = () => {
                           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 flex-1 w-full lg:w-auto">
                             {/* Start Time */}
                             <div className="flex items-center gap-2 w-full sm:w-auto">
-                              <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">من:</label>
+                              <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">
+                                من:
+                              </label>
                               <select
                                 value={apt.startTime}
-                                onChange={(e) => updateAppointmentTime(apt.id, "startTime", e.target.value)}
+                                onChange={(e) =>
+                                  updateAppointmentTime(
+                                    apt.id,
+                                    "startTime",
+                                    e.target.value
+                                  )
+                                }
                                 className="px-2 sm:px-3 py-1.5 sm:py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-sm sm:text-base flex-1 sm:flex-initial"
                               >
                                 {timeSlots.map((time) => (
-                                  <option key={time} value={time}>{time}</option>
+                                  <option key={time} value={time}>
+                                    {time}
+                                  </option>
                                 ))}
                               </select>
                             </div>
 
                             {/* Arrow */}
-                            <span className="text-purple-400 font-bold hidden sm:inline">→</span>
+                            <span className="text-purple-400 font-bold hidden sm:inline">
+                              →
+                            </span>
 
                             {/* End Time */}
                             <div className="flex items-center gap-2 w-full sm:w-auto">
-                              <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">إلى:</label>
+                              <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">
+                                إلى:
+                              </label>
                               <select
                                 value={apt.endTime}
-                                onChange={(e) => updateAppointmentTime(apt.id, "endTime", e.target.value)}
+                                onChange={(e) =>
+                                  updateAppointmentTime(
+                                    apt.id,
+                                    "endTime",
+                                    e.target.value
+                                  )
+                                }
                                 className="px-2 sm:px-3 py-1.5 sm:py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-sm sm:text-base flex-1 sm:flex-initial"
                               >
                                 {timeSlots.map((time) => (
-                                  <option key={time} value={time}>{time}</option>
+                                  <option key={time} value={time}>
+                                    {time}
+                                  </option>
                                 ))}
                               </select>
                             </div>
@@ -870,7 +1019,13 @@ const DoctorSettingsSection = () => {
                             <div className="flex items-center gap-2 bg-purple-100 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg w-full sm:w-auto">
                               <FaClock className="text-purple-600 text-sm" />
                               <span className="text-xs sm:text-sm font-semibold text-purple-900">
-                                <span className="hidden sm:inline">مدة العمل: </span>{calculateWorkDuration(apt.startTime, apt.endTime)}
+                                <span className="hidden sm:inline">
+                                  مدة العمل:{" "}
+                                </span>
+                                {calculateWorkDuration(
+                                  apt.startTime,
+                                  apt.endTime
+                                )}
                               </span>
                             </div>
                           </div>

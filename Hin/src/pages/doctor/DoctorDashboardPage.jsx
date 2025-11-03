@@ -160,8 +160,8 @@ const DoctorDashboardPage = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
 
-  // Doctor data
-  const doctorData = {
+  // Doctor data state
+  const [doctorData, setDoctorData] = useState({
     id: "doctor-123", // Added id for chat component
     name: "د. أحمد محمد علي",
     specialty: "طبيب عام",
@@ -170,6 +170,15 @@ const DoctorDashboardPage = () => {
     prescriptions: prescriptions.length,
     rating: 4.9,
     type: "doctor",
+    clinicName: "عيادة النور للأطفال", // Default clinic name
+  });
+
+  // Function to update doctor data
+  const updateDoctorData = (newData) => {
+    setDoctorData((prevData) => ({
+      ...prevData,
+      ...newData,
+    }));
   };
 
   // استبدال البيانات الوهمية بالإشعارات من localStorage
@@ -627,7 +636,8 @@ const DoctorDashboardPage = () => {
                   {activeSection === "prescriptions-history" && "سجل الروشتات"}
                   {activeSection === "appointments" && "مواعيدي"}
                   {activeSection === "patients" && "قائمة المرضى"}
-                  {activeSection === "settings" && " إعدادات العيادة و المواعيد"}
+                  {activeSection === "settings" &&
+                    " إعدادات العيادة و المواعيد"}
                   {activeSection === "chat" && "المحادثات"}
                   {/* {activeSection === "analytics" && "التقارير والإحصائيات"} */}
                 </h1>
@@ -709,7 +719,12 @@ const DoctorDashboardPage = () => {
             />
           )}
 
-          {activeSection === "settings" && <DoctorSettingsSection />}
+          {activeSection === "settings" && (
+            <DoctorSettingsSection
+              updateDoctorData={updateDoctorData}
+              doctorData={doctorData}
+            />
+          )}
 
           {activeSection === "analytics" && (
             <PlaceholderSection

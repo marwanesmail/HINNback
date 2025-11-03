@@ -200,6 +200,7 @@ const CompanyDashboardPage = () => {
       dailySales: 15000,
       activePharmacies: 150,
       type: "company",
+      activity: "توزيع"
     }),
     [products.length]
   );

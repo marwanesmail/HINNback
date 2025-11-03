@@ -494,7 +494,7 @@ const PatientProfilePage = () => {
   const dashboardProfileData = {
     name: patientData.fullName,
     email: patientData.email,
-    description: "مريض",
+    // description: "مريض",
     type: "patient",
   };
 
