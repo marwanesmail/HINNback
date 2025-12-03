@@ -18,6 +18,10 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/auth/LoginPage";
 import SignupPage from "./pages/auth/SignupPage";
 
+// Admin Pages
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+
 import SearchResultsPage from "./pages/SearchResultsPage";
 
 // مكونات التخطيط
@@ -81,6 +85,8 @@ function Layout({ children }) {
     "/pharmacy/profile",
     "/company/profile",
     "/patient/profile-page",
+    "/admin/login",
+    "/admin/dashboard",
   ];
 
   const shouldShowLayout = !pagesWithoutLayout.includes(location.pathname);
@@ -121,6 +127,10 @@ function App() {
                 <Route index element={<HomePage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
+
+                {/* Admin Routes */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
                 <Route path="/search" element={<SearchResultsPage />} />
 

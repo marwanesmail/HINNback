@@ -103,22 +103,23 @@ const Navbar = () => {
               initial={{ scale: 0.5, rotate: -15, opacity: 0 }}
               animate={{ scale: 1, rotate: 0, opacity: 1 }}
               transition={{ type: "spring", stiffness: 120, damping: 10 }}
-              className="w-10 h-10 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl flex items-center justify-center shadow-md"
+              className="flex items-center"
             >
-              <FaClinicMedical className="text-white text-lg" />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.4 }}
-              className="flex flex-col"
-            >
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-500 bg-clip-text text-transparent">
-                هيِّن
-              </span>
-              <span className="text-xs text-gray-500 -mt-1">
-                للرعاية الصحية
-              </span>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <img
+                  src="/logo.png"
+                  alt="هيِّن - Logo"
+                  className="h-10 w-auto"
+                />
+                <div className="flex flex-col">
+                  <span className="text-xl font-bold bg-gradient-to-r from-primary-600 to-primary-500 bg-clip-text text-transparent">
+                    هيِّن
+                  </span>
+                  <span className="text-xs text-gray-500 -mt-1">
+                    للرعاية الصحية
+                  </span>
+                </div>
+              </div>
             </motion.div>
           </Link>
 
@@ -185,10 +186,23 @@ const Navbar = () => {
                   >
                     <FaUser className="text-primary-600 hover:text-primary-700 transition duration-300 transform hover:scale-110 drop-shadow-sm cursor-pointer" />
                     <span>
-                      {user?.userType === "doctor" && `أهلاً Dr/ ${user?.name?.replace("د. ", "") || user?.email?.split("@")[0]}`}
-                      {user?.userType === "pharmacy" && `أهلاً Dr/ ${user?.name?.replace("د. ", "") || user?.email?.split("@")[0]}`}
-                      {user?.userType === "company" && `أهلاً Dr/ ${user?.name?.replace("د. ", "")|| user?.email?.split("@")[0]}`}
-                      {user?.userType === "patient" && `أهلاً، ${user?.name || user?.email?.split("@")[0]}`}
+                      {user?.userType === "doctor" &&
+                        `أهلاً Dr/ ${
+                          user?.name?.replace("د. ", "") ||
+                          user?.email?.split("@")[0]
+                        }`}
+                      {user?.userType === "pharmacy" &&
+                        `أهلاً Dr/ ${
+                          user?.name?.replace("د. ", "") ||
+                          user?.email?.split("@")[0]
+                        }`}
+                      {user?.userType === "company" &&
+                        `أهلاً Dr/ ${
+                          user?.name?.replace("د. ", "") ||
+                          user?.email?.split("@")[0]
+                        }`}
+                      {user?.userType === "patient" &&
+                        `أهلاً، ${user?.name || user?.email?.split("@")[0]}`}
                     </span>
                     <FaChevronDown className="text-sm" />
                   </button>
@@ -349,10 +363,23 @@ const Navbar = () => {
                     >
                       <FaUser className="text-primary-600 text-lg" />
                       <span className="text-gray-700 font-medium">
-                        {user?.userType === "doctor" && `أهلاً Dr/ ${user?.name?.replace("د. ", "") || user?.email?.split("@")[0]}`}
-                        {user?.userType === "pharmacy" && `أهلاً Dr/ ${user?.name?.replace("د. ", "") || user?.email?.split("@")[0]}`}
-                        {user?.userType === "company" && `أهلاً Dr/ ${user?.name?.replace("د. ", "") || user?.email?.split("@")[0]}`}
-                        {user?.userType === "patient" && `أهلاً، ${user?.name || user?.email?.split("@")[0]}`}
+                        {user?.userType === "doctor" &&
+                          `أهلاً Dr/ ${
+                            user?.name?.replace("د. ", "") ||
+                            user?.email?.split("@")[0]
+                          }`}
+                        {user?.userType === "pharmacy" &&
+                          `أهلاً Dr/ ${
+                            user?.name?.replace("د. ", "") ||
+                            user?.email?.split("@")[0]
+                          }`}
+                        {user?.userType === "company" &&
+                          `أهلاً Dr/ ${
+                            user?.name?.replace("د. ", "") ||
+                            user?.email?.split("@")[0]
+                          }`}
+                        {user?.userType === "patient" &&
+                          `أهلاً، ${user?.name || user?.email?.split("@")[0]}`}
                       </span>
                     </motion.div>
 
