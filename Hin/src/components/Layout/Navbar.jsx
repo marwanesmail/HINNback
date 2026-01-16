@@ -3,10 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  FaClinicMedical,
   FaHome,
   FaSearch,
-  FaCalendarCheck,
   FaPrescription,
   FaShoppingCart,
   FaBars,
@@ -62,6 +60,21 @@ const Navbar = () => {
       Swal.fire({
         title: "يجب تسجيل الدخول أولاً",
         text: "يرجى تسجيل الدخول للمتابعة إلى طلب الدواء",
+        icon: "warning",
+        confirmButtonText: "حسنًا",
+      });
+    }
+  };
+
+  // Handle doctors link click
+  const handleDoctorsClick = (e) => {
+    e.preventDefault();
+    if (isAuthenticated()) {
+      navigate("/doctors");
+    } else {
+      Swal.fire({
+        title: "يجب تسجيل الدخول أولاً",
+        text: "يرجى تسجيل الدخول للمتابعة إلى ابحث عن طبيب",
         icon: "warning",
         confirmButtonText: "حسنًا",
       });
@@ -140,11 +153,14 @@ const Navbar = () => {
                 </Link>
               </motion.div>
               <motion.div variants={desktopLinkVariants}>
-                <Link to="/doctors" className={getLinkClasses("/doctors")}>
+                <button
+                  onClick={handleDoctorsClick}
+                  className={getLinkClasses("/doctors")}
+                >
                   <FaSearch className="ml-1" />
                   ابحث عن طبيب
                   <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-primary-500 transition-all duration-300 group-hover:w-full"></span>
-                </Link>
+                </button>
               </motion.div>
               <motion.div variants={desktopLinkVariants}>
                 <button
@@ -324,11 +340,14 @@ const Navbar = () => {
                 </Link>
               </motion.div>
               <motion.div variants={linkVariants}>
-                <Link to="/doctors" className={getLinkClasses("/doctors")}>
+                <button
+                  onClick={handleDoctorsClick}
+                  className={getLinkClasses("/doctors")}
+                >
                   <FaSearch className="ml-2" />
                   ابحث عن طبيب
                   <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-primary-500 transition-all duration-300 group-hover:w-full"></span>
-                </Link>
+                </button>
               </motion.div>
               {/* <motion.div variants={linkVariants}>
                 <Link

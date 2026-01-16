@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  FaClinicMedical,
   FaBars,
   FaHome,
   FaBell,
@@ -91,7 +90,11 @@ const SimpleNavbar = ({
             </button>
           )}
           <div className="flex items-center gap-2">
-            <FaClinicMedical className="text-blue-600" />
+            <img
+              src="/logo.png"
+              alt="Hin Logo"
+              className="h-6 w-auto object-contain"
+            />
             <span className={`text-lg sm:text-xl font-bold ${textColor}`}>
               {title}
             </span>

@@ -39,13 +39,13 @@ import PatientDashboardSection from "./components/PatientDashboardSection";
 import PatientMedicalFileSection from "./components/PatientMedicalFileSection";
 import PlaceholderSection from "./components/PlaceholderSection";
 import PatientMedicalHistorySection from "./components/PatientMedicalHistorySection";
+import PatientCurrentPrescriptionsSection from "./components/PatientCurrentPrescriptionsSection";
 import { useAuth } from "../../hooks/useAuth";
 import {
   searchInElement,
   removeHighlights,
   highlightSearchTerms,
 } from "../../utils/dashboardSearch";
-
 const PatientProfilePage = () => {
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
@@ -58,6 +58,28 @@ const PatientProfilePage = () => {
   const [activeSection, setActiveSection] = useState(
     isProfilePage ? "profile" : "dashboard"
   );
+
+  // Handle URL parameter for section navigation
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const sectionParam = params.get("section");
+    if (sectionParam && !isProfilePage) {
+      // Only set the section if it's a valid section
+      const validSections = [
+        "dashboard",
+        "medical-file",
+        "medical-history",
+        "current-prescriptions",
+        "dispensed-medications",
+        "appointments",
+        "chats",
+      ];
+      if (validSections.includes(sectionParam)) {
+        setActiveSection(sectionParam);
+      }
+    }
+  }, [location.search, isProfilePage]);
+
   const [patientData, setPatientData] = useState(null);
   const [medicalFile, setMedicalFile] = useState(null);
   const [isEditingMedical, setIsEditingMedical] = useState(false);
@@ -518,33 +540,35 @@ const PatientProfilePage = () => {
         sidebarColor="bg-purple-800"
         textColor="text-white"
       >
-         {/* Header */}
-            <header className="bg-white shadow-sm border-b border-gray-200">
-              <div className="px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900">
-                      {activeSection === "dashboard" && "لوحة التحكم"}
-                      {activeSection === "medical-file" && "الملف الطبي"}
-                      {activeSection === "medical-history" && "السجل الطبي"}
-                      {activeSection === "current-prescriptions" && "الروشتات الحالية"}
-                      {activeSection === "dispensed-medications" && "الأدوية المصروفة"}
-                      {activeSection === "appointments" && "مواعيدي"}
-                      {activeSection === "chats" && "المحادثات"}
-                    </h1>
-                    <p className="text-gray-600 mt-1">
-                      {new Date().toLocaleDateString("ar-EG", {
-                        weekday: "long",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </p>
-                  </div>
-                </div>
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {activeSection === "dashboard" && "لوحة التحكم"}
+                  {activeSection === "medical-file" && "الملف الطبي"}
+                  {activeSection === "medical-history" && "السجل الطبي"}
+                  {activeSection === "current-prescriptions" &&
+                    "الروشتات الحالية"}
+                  {activeSection === "dispensed-medications" &&
+                    "الأدوية المصروفة"}
+                  {activeSection === "appointments" && "مواعيدي"}
+                  {activeSection === "chats" && "المحادثات"}
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  {new Date().toLocaleDateString("ar-EG", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
               </div>
-            </header>
-           
+            </div>
+          </div>
+        </header>
+
         {isProfilePage ? (
           <div className="p-6">
             <motion.div
@@ -824,10 +848,7 @@ const PatientProfilePage = () => {
                 animate="visible"
                 variants={containerVariants}
               >
-                <PlaceholderSection
-                  icon={FaPrescription}
-                  title="الروشتات الحالية"
-                />
+                <PatientCurrentPrescriptionsSection />
               </motion.div>
             )}
             {activeSection === "dispensed-medications" && (

@@ -23,7 +23,8 @@ const HowItWorksSection = () => {
     {
       number: 1,
       title: "الطبيب يكتب الروشتة",
-      description: "يقوم الطبيب بإنشاء وصفة طبية إلكترونية وإرسالها إلى النظام.",
+      description:
+        "يقوم الطبيب بإنشاء وصفة طبية إلكترونية وإرسالها إلى النظام.",
       icon: FaUserMd,
       gradient: "from-blue-400 to-indigo-600",
     },
@@ -44,7 +45,8 @@ const HowItWorksSection = () => {
     {
       number: 4,
       title: "متابعة الحالة",
-      description: "يمكن للطبيب متابعة حالة الروشتة والتأكد من استلام المريض للدواء.",
+      description:
+        "يمكن للطبيب متابعة حالة الروشتة والتأكد من استلام المريض للدواء.",
       icon: FaCheckCircle,
       gradient: "from-orange-400 to-red-500",
     },
@@ -73,20 +75,13 @@ const HowItWorksSection = () => {
         >
           <motion.h2
             variants={itemVariants}
-            className="text-4xl md:text-5xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text mb-6"
+            className="text-4xl md:text-5xl font-bold text-gray-800 mb-4"
           >
-            كيف يعمل{" "}
-            <span className="bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text">
-              النظام؟
-            </span>
+            كيف يعمل النظام؟
           </motion.h2>
-          <motion.div
-            variants={itemVariants}
-            className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full"
-          ></motion.div>
           <motion.p
             variants={itemVariants}
-            className="text-xl text-gray-600 mt-6 max-w-3xl mx-auto"
+            className="text-xl text-gray-600 mt-4 max-w-3xl mx-auto"
           >
             خطوات مترابطة تضمن سير العمل بسلاسة بين الطبيب، الصيدلية، المريض
             والشركة

@@ -66,16 +66,23 @@ const testimonials = [
 const TestimonialsCarousel = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const nextSlide = () =>
-    setCurrentIndex((prev) => (prev + 1) % testimonials.length);
-  const prevSlide = () =>
+  const nextSlide = () => {
+    setCurrentIndex((prev) => (prev + 2) % testimonials.length);
+  };
+
+  const prevSlide = () => {
     setCurrentIndex(
-      (prev) => (prev - 1 + testimonials.length) % testimonials.length
+      (prev) => (prev - 2 + testimonials.length) % testimonials.length
     );
+  };
+
+  // Get the indices for the current two testimonials
+  const firstIndex = currentIndex;
+  const secondIndex = (currentIndex + 1) % testimonials.length;
 
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-50 via-purple-50 to-blue-100">
-      <div className="max-w-4xl mx-auto text-center">
+      <div className="max-w-6xl mx-auto text-center">
         {/* العنوان - تم تطبيق انيميشن الرؤية عند التمرير هنا */}
         <motion.div
           initial="hidden"
@@ -98,31 +105,54 @@ const TestimonialsCarousel = () => {
 
         {/* الكارت */}
         <div className="relative">
-          <AnimatePresence mode="wait">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* First testimonial */}
             <motion.div
-              key={testimonials[currentIndex].id}
-              // أنيميشن الكاروسيل للتحويل بين الآراء
-              initial={{ opacity: 0, x: currentIndex > 0 ? 50 : -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: currentIndex > 0 ? -50 : 50 }}
+              key={testimonials[firstIndex].id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.5, ease: "easeInOut" }}
-              className="bg-white rounded-3xl shadow-xl p-8 mx-auto max-w-xl"
+              className="bg-white rounded-3xl shadow-xl p-8"
             >
               <FaQuoteLeft className="text-blue-500 text-3xl mb-4 mx-auto" />
               <p className="text-gray-700 text-lg leading-relaxed mb-6">
-                {testimonials[currentIndex].comment}
+                {testimonials[firstIndex].comment}
               </p>
               <hr className="my-4" />
               <h3 className="font-bold text-lg text-gray-900">
-                {testimonials[currentIndex].name}
+                {testimonials[firstIndex].name}
               </h3>
               <p className="text-sm text-gray-500">
-                {testimonials[currentIndex].date}
+                {testimonials[firstIndex].date}
               </p>
             </motion.div>
-          </AnimatePresence>
+
+            {/* Second testimonial */}
+            <motion.div
+              key={testimonials[secondIndex].id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+              className="bg-white rounded-3xl shadow-xl p-8"
+            >
+              <FaQuoteLeft className="text-blue-500 text-3xl mb-4 mx-auto" />
+              <p className="text-gray-700 text-lg leading-relaxed mb-6">
+                {testimonials[secondIndex].comment}
+              </p>
+              <hr className="my-4" />
+              <h3 className="font-bold text-lg text-gray-900">
+                {testimonials[secondIndex].name}
+              </h3>
+              <p className="text-sm text-gray-500">
+                {testimonials[secondIndex].date}
+              </p>
+            </motion.div>
+          </div>
+
           {/* أزرار التنقل */}
-          <div className="flex justify-between mt-8 max-w-xl mx-auto">
+          <div className="flex justify-between mt-8 max-w-4xl mx-auto">
             <button
               onClick={prevSlide}
               className="px-4 py-2 rounded-full bg-white shadow hover:bg-gray-100 transition text-gray-700 text-xl flex items-center justify-center"
@@ -139,15 +169,19 @@ const TestimonialsCarousel = () => {
 
           {/* Dots Indicators */}
           <div className="flex justify-center gap-3 mt-6">
-            {testimonials.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentIndex(i)}
-                className={`w-3 h-3 rounded-full transition ${
-                  currentIndex === i ? "bg-blue-600 scale-125" : "bg-gray-300"
-                }`}
-              />
-            ))}
+            {Array.from({ length: Math.ceil(testimonials.length / 2) }).map(
+              (_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentIndex(i * 2)}
+                  className={`w-3 h-3 rounded-full transition ${
+                    Math.floor(currentIndex / 2) === i
+                      ? "bg-blue-600 scale-125"
+                      : "bg-gray-300"
+                  }`}
+                />
+              )
+            )}
           </div>
         </div>
       </div>

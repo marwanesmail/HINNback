@@ -18,6 +18,7 @@ import {
   FaCheckCircle,
   FaClock,
 } from "react-icons/fa";
+import StatsGrid from "../../../components/Layout/StatsGrid"; // Import the new StatsGrid component
 
 const PatientDashboardSection = ({
   patientData,
@@ -31,21 +32,21 @@ const PatientDashboardSection = ({
     completedAppointments: 0,
     currentMedications: 0,
     bmi: 0,
-    bmiStatus: '',
+    bmiStatus: "",
   });
 
   useEffect(() => {
     // Calculate BMI if height and weight are available
     let bmi = 0;
-    let bmiStatus = '';
+    let bmiStatus = "";
     if (medicalFile.height && medicalFile.weight) {
       const heightInMeters = medicalFile.height / 100;
       bmi = (medicalFile.weight / (heightInMeters * heightInMeters)).toFixed(1);
-      
-      if (bmi < 18.5) bmiStatus = 'نحيف';
-      else if (bmi < 25) bmiStatus = 'طبيعي';
-      else if (bmi < 30) bmiStatus = 'وزن زائد';
-      else bmiStatus = 'سمنة';
+
+      if (bmi < 18.5) bmiStatus = "نحيف";
+      else if (bmi < 25) bmiStatus = "طبيعي";
+      else if (bmi < 30) bmiStatus = "وزن زائد";
+      else bmiStatus = "سمنة";
     }
 
     // Simulated statistics - in production, these would come from API
@@ -58,6 +59,114 @@ const PatientDashboardSection = ({
       bmiStatus: bmiStatus,
     });
   }, [medicalFile]);
+
+  // Prepare health stats data for the StatsGrid component
+  const healthStatsData = [
+    {
+      id: 1,
+      title: "العمر",
+      value: medicalFile.age,
+      icon: <FaBirthdayCake className="text-blue-500 text-xl" />,
+      iconBg: "bg-blue-100",
+      borderLeft: "border-blue-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "سنة",
+    },
+    {
+      id: 2,
+      title: "فصيلة الدم",
+      value: medicalFile.bloodType || "غير محدد",
+      icon: <FaTint className="text-red-500 text-xl" />,
+      iconBg: "bg-red-100",
+      borderLeft: "border-red-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "فصيلة الدم",
+    },
+    {
+      id: 3,
+      title: "الوزن",
+      value: medicalFile.weight || "--",
+      icon: <FaWeight className="text-green-500 text-xl" />,
+      iconBg: "bg-green-100",
+      borderLeft: "border-green-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "كيلوجرام",
+    },
+    {
+      id: 4,
+      title: "الطول",
+      value: medicalFile.height || "--",
+      icon: <FaRuler className="text-orange-500 text-xl" />,
+      iconBg: "bg-orange-100",
+      borderLeft: "border-orange-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "سنتيمتر",
+    },
+    {
+      id: 5,
+      title: "مؤشر الكتلة",
+      value: stats.bmi || "--",
+      icon: <FaHeartbeat className="text-purple-500 text-xl" />,
+      iconBg: "bg-purple-100",
+      borderLeft: "border-purple-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: stats.bmiStatus || "BMI",
+    },
+  ];
+
+  // Prepare medical activities stats data for the StatsGrid component
+  const medicalStatsData = [
+    {
+      id: 1,
+      title: "الروشتات النشطة",
+      value: stats.activePrescriptions,
+      icon: <FaPrescription className="text-indigo-500 text-xl" />,
+      iconBg: "bg-indigo-100",
+      borderLeft: "border-indigo-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "روشتة سارية",
+    },
+    {
+      id: 2,
+      title: "الأدوية الحالية",
+      value: stats.currentMedications,
+      icon: <FaPills className="text-teal-500 text-xl" />,
+      iconBg: "bg-teal-100",
+      borderLeft: "border-teal-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "دواء نشط",
+    },
+    {
+      id: 3,
+      title: "مواعيد قادمة",
+      value: stats.upcomingAppointments,
+      icon: <FaClock className="text-cyan-500 text-xl" />,
+      iconBg: "bg-cyan-100",
+      borderLeft: "border-cyan-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "موعد محجوز",
+    },
+    {
+      id: 4,
+      title: "مواعيد مكتملة",
+      value: stats.completedAppointments,
+      icon: <FaCheckCircle className="text-emerald-500 text-xl" />,
+      iconBg: "bg-emerald-100",
+      borderLeft: "border-emerald-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "زيارة مسبقة",
+    },
+  ];
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -110,211 +219,11 @@ const PatientDashboardSection = ({
         </div>
       </motion.div>
 
-      {/* Health Stats */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6"
-      >
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm p-6 border border-blue-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-blue-700">العمر</p>
-              <p className="text-3xl font-bold text-blue-900 mt-2">
-                {medicalFile.age}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
-              <FaBirthdayCake className="text-blue-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-blue-600 mt-4 font-medium">سنة</p>
-        </motion.div>
+      {/* Health Stats - Using the new reusable component */}
+      <StatsGrid stats={healthStatsData} columns={5} />
 
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl shadow-sm p-6 border border-red-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-red-700">فصيلة الدم</p>
-              <p className="text-3xl font-bold text-red-900 mt-2">
-                {medicalFile.bloodType || "غير محدد"}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-red-200 rounded-lg flex items-center justify-center">
-              <FaTint className="text-red-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-red-600 mt-4 font-medium">فصيلة الدم</p>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-sm p-6 border border-green-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-green-700">الوزن</p>
-              <p className="text-3xl font-bold text-green-900 mt-2">
-                {medicalFile.weight || "--"}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-green-200 rounded-lg flex items-center justify-center">
-              <FaWeight className="text-green-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-green-600 mt-4 font-medium">كيلوجرام</p>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-sm p-6 border border-orange-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-orange-700">الطول</p>
-              <p className="text-3xl font-bold text-orange-900 mt-2">
-                {medicalFile.height || "--"}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-orange-200 rounded-lg flex items-center justify-center">
-              <FaRuler className="text-orange-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-orange-600 mt-4 font-medium">سنتيمتر</p>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-sm p-6 border border-purple-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-purple-700">
-                مؤشر الكتلة
-              </p>
-              <p className="text-3xl font-bold text-purple-900 mt-2">
-                {stats.bmi || "--"}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-purple-200 rounded-lg flex items-center justify-center">
-              <FaHeartbeat className="text-purple-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-purple-600 mt-4 font-medium">{stats.bmiStatus || "BMI"}</p>
-        </motion.div>
-      </motion.div>
-
-      {/* Medical Activities Stats */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-      >
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl shadow-sm p-6 border border-indigo-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-indigo-700">
-                الروشتات النشطة
-              </p>
-              <p className="text-3xl font-bold text-indigo-900 mt-2">
-                {stats.activePrescriptions}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-indigo-200 rounded-lg flex items-center justify-center">
-              <FaPrescription className="text-indigo-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-indigo-600 mt-4 font-medium">روشتة سارية</p>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl shadow-sm p-6 border border-teal-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-teal-700">
-                الأدوية الحالية
-              </p>
-              <p className="text-3xl font-bold text-teal-900 mt-2">
-                {stats.currentMedications}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-teal-200 rounded-lg flex items-center justify-center">
-              <FaPills className="text-teal-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-teal-600 mt-4 font-medium">دواء نشط</p>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl shadow-sm p-6 border border-cyan-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-cyan-700">
-                مواعيد قادمة
-              </p>
-              <p className="text-3xl font-bold text-cyan-900 mt-2">
-                {stats.upcomingAppointments}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-cyan-200 rounded-lg flex items-center justify-center">
-              <FaClock className="text-cyan-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-cyan-600 mt-4 font-medium">موعد محجوز</p>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl shadow-sm p-6 border border-emerald-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-emerald-700">
-                مواعيد مكتملة
-              </p>
-              <p className="text-3xl font-bold text-emerald-900 mt-2">
-                {stats.completedAppointments}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-emerald-200 rounded-lg flex items-center justify-center">
-              <FaCheckCircle className="text-emerald-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-emerald-600 mt-4 font-medium">زيارة مسبقة</p>
-        </motion.div>
-      </motion.div>
+      {/* Medical Activities Stats - Using the new reusable component */}
+      <StatsGrid stats={medicalStatsData} columns={4} />
 
       {/* Medical Alerts */}
       {(medicalFile.chronicDiseases || medicalFile.allergies) && (

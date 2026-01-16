@@ -124,16 +124,16 @@ const HomePage = () => {
                 <div className="lg:col-span-1 space-y-4">
                   {[
                     {
-                      img: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                      img: "https://i0.wp.com/hamedclinic.com/wp-content/uploads/2022/04/doc.jpg?fit=880%2C587&ssl=1",
                       title: "خدمات طبية متميزة",
                       subtitle: "رعاية صحية شاملة",
-                      icon: <FaStethoscope className="text-white text-sm" />,
+                      icon: <FaStethoscope className="text-black text-sm" />,
                     },
                     {
-                      img: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                      img: "https://png.pngtree.com/png-vector/20200508/ourlarge/pngtree-illustration-of-express-delivery-officer-png-image_2202339.jpg",
                       title: "توصيل سريع وآمن",
                       subtitle: "خدمة على مدار الساعة",
-                      icon: <FaShippingFast className="text-white text-sm" />,
+                      icon: <FaShippingFast className="text-black text-sm" />,
                     },
                   ].map((item, idx) => (
                     <motion.div
@@ -159,7 +159,7 @@ const HomePage = () => {
                         <h3 className="text-sm font-bold mb-1">{item.title}</h3>
                         <p className="text-xs opacity-90">{item.subtitle}</p>
                         <div className="flex items-center mt-2">
-                          <span className="text-xs bg-white/20 px-2 py-1 rounded-full">
+                          <span className="text-xs bg-black px-2 py-1 rounded-full">
                             اعرف المزيد
                           </span>
                         </div>

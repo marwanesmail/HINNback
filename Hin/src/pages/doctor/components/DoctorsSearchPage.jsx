@@ -41,22 +41,23 @@ const DoctorCard = ({ doctor }) => {
   };
 
   const handleBookNow = () => {
+    // Navigate immediately without any delay or visual feedback
     navigate(`/book-appointment/${doctor.id}`);
   };
 
   return (
-    <motion.div
-      variants={cardVariants}
-      whileHover="hover"
-      className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 cursor-pointer flex flex-col items-center"
-    >
+    <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 cursor-pointer flex flex-col items-center">
       {/* صورة الطبيب */}
-      <img 
-        src={doctor.image || "https://via.placeholder.com/96"} 
+      <img
+        src={doctor.image}
         alt={doctor.name}
         className="w-24 h-24 rounded-full object-cover border-4 border-blue-200 mb-4"
+        onError={(e) => {
+          // Fallback to generic doctor avatar if image fails to load
+          e.target.src =
+            "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=200&q=80";
+        }}
       />
-
       {/* الاسم + التخصص */}
       <h3 className="text-xl font-bold text-gray-900">{doctor.name}</h3>
       <p className="text-gray-600 mb-2">{doctor.specialty}</p>
@@ -82,18 +83,18 @@ const DoctorCard = ({ doctor }) => {
       <div className="flex gap-2 w-full">
         <button
           onClick={handleViewDetails}
-          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
         >
           عرض التفاصيل
         </button>
         <button
           onClick={handleBookNow}
-          className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+          className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
         >
           احجز الآن
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
@@ -120,7 +121,8 @@ const DoctorsSearchPage = () => {
         address: "شارع التحرير، القاهرة",
         phone: "+20 12 345 6789",
         email: "ahmed.ali@clinic.com",
-        image: "/images/doctors/doctor1.jpg",
+        image:
+          "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=200&q=80",
         clinicImages: [
           "/images/clinics/clinic1-1.jpg",
           "/images/clinics/clinic1-2.jpg",
@@ -149,7 +151,8 @@ const DoctorsSearchPage = () => {
         address: "شارع الجمهورية، الإسكندرية",
         phone: "+20 11 234 5678",
         email: "fatma.hassan@clinic.com",
-        image: "/images/doctors/doctor2.jpg",
+        image:
+          "https://drjulie.yolasite.com/resources/doctor-profile-pic.png.opt430x430o0%2C0s430x430.png",
         clinicImages: [
           "/images/clinics/clinic2-1.jpg",
           "/images/clinics/clinic2-2.jpg",
@@ -178,7 +181,8 @@ const DoctorsSearchPage = () => {
         address: "شارع النيل، الجيزة",
         phone: "+20 10 987 6543",
         email: "mohamed.abdelrahman@clinic.com",
-        image: "/images/doctors/doctor3.jpg",
+        image:
+          "https://elshrouk-care.com/wp-content/uploads/2024/01/%D8%B7%D9%84%D8%A8-%D8%AF%D9%83%D8%AA%D9%88%D8%B1-%D8%A8%D8%A7%D8%B7%D9%86%D8%A9-%D9%83%D8%B4%D9%81-%D9%85%D9%86%D8%B2%D9%84%D9%8A-e1706364819142.jpeg",
         clinicImages: [
           "/images/clinics/clinic3-1.jpg",
           "/images/clinics/clinic3-2.jpg",
@@ -207,7 +211,8 @@ const DoctorsSearchPage = () => {
         address: "شارع الهرم، الجيزة",
         phone: "+20 12 876 5432",
         email: "sara.ahmed@clinic.com",
-        image: "/images/doctors/doctor4.jpg",
+        image:
+          "https://doctorstorage.blob.core.windows.net/386671/Profile/passport_770ecaaf-1019-4cfc-8509-0aa93494a658.jpg?sig=qyS2CNI%2BvhrB25atW4Ult%2BuSeIy%2BXcMXa9TsRWqnHIA%3D&sv=2015-04-05&si=PrivatePolicy&sr=b",
         clinicImages: [
           "/images/clinics/clinic4-1.jpg",
           "/images/clinics/clinic4-2.jpg",
@@ -236,7 +241,8 @@ const DoctorsSearchPage = () => {
         address: "شارع المعز، القاهرة",
         phone: "+20 11 765 4321",
         email: "khaled.mahmoud@clinic.com",
-        image: "/images/doctors/doctor5.jpg",
+        image:
+          "https://images.unsplash.com/photo-1622253692010-333f2da6031d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=200&q=80",
         clinicImages: [
           "/images/clinics/clinic5-1.jpg",
           "/images/clinics/clinic5-2.jpg",
@@ -262,7 +268,6 @@ const DoctorsSearchPage = () => {
         isAvailable: true,
       },
     ];
-
     const defaultSpecialties = [
       "جميع التخصصات",
       "طب القلب",
@@ -282,7 +287,7 @@ const DoctorsSearchPage = () => {
       "القاهرة",
       "الإسكندرية",
       "الجيزة",
-      "شبرا الخيمة",
+      "الشرقية",
       "بورسعيد",
       "السويس",
       "الأقصر",
@@ -291,24 +296,39 @@ const DoctorsSearchPage = () => {
       "طنطا",
     ];
 
-    // Save default data to localStorage if not exists
-    if (!localStorage.getItem("doctors")) {
-      localStorage.setItem("doctors", JSON.stringify(defaultDoctors));
-    }
-
-    if (!localStorage.getItem("specialties")) {
-      localStorage.setItem("specialties", JSON.stringify(defaultSpecialties));
-    }
-
-    if (!localStorage.getItem("cities")) {
-      localStorage.setItem("cities", JSON.stringify(defaultCities));
-    }
-
-    // Load data from localStorage
-    const storedDoctors = JSON.parse(localStorage.getItem("doctors") || "[]");
-    setDoctors(storedDoctors);
-    setFilteredDoctors(storedDoctors);
+    // Set default data directly to state without using localStorage
+    setDoctors(defaultDoctors);
+    setFilteredDoctors(defaultDoctors);
   }, []);
+
+  // Load specialties and cities directly from default values
+  const specialties = [
+    "جميع التخصصات",
+    "طب القلب",
+    "طب الأطفال",
+    "طب العظام",
+    "طب النساء والتوليد",
+    "طب الجلدية",
+    "طب العيون",
+    "طب الأنف والأذن والحنجرة",
+    "طب الأسنان",
+    "الطب النفسي",
+    "طب الباطنة",
+  ];
+
+  const cities = [
+    "جميع المدن",
+    "القاهرة",
+    "الإسكندرية",
+    "الجيزة",
+    "الشرقية",
+    "بورسعيد",
+    "السويس",
+    "الأقصر",
+    "أسوان",
+    "المنصورة",
+    "طنطا",
+  ];
 
   // Search doctors function - هنا هيكون ربط بالباك اند بعدين
   const searchDoctors = (query) => {
@@ -352,12 +372,6 @@ const DoctorsSearchPage = () => {
     setFilteredDoctors(result);
   }, [searchQuery, selectedSpecialty, selectedCity, sortBy, doctors]);
 
-  // Load specialties and cities from localStorage
-  const specialties = JSON.parse(
-    localStorage.getItem("specialties") || '["جميع التخصصات"]'
-  );
-  const cities = JSON.parse(localStorage.getItem("cities") || '["جميع المدن"]');
-
   const clearFilters = () => {
     setSearchQuery("");
     setSelectedSpecialty("جميع التخصصات");
@@ -385,9 +399,9 @@ const DoctorsSearchPage = () => {
       >
         <div className="max-w-7xl mx-auto px-4 py-6 text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-احجز دكتورك الآن         </h1>
-          <p className="text-gray-600">
-رعاية صحية لحياة أفضل ليك</p>
+            احجز دكتورك الآن{" "}
+          </h1>
+          <p className="text-gray-600">رعاية صحية لحياة أفضل ليك</p>
         </div>
       </motion.div>
 
@@ -455,7 +469,7 @@ const DoctorsSearchPage = () => {
 
       {/* Results */}
       <motion.div
-        className="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+        className="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-10"
         variants={containerVariants}
       >
         {filteredDoctors.length === 0 ? (

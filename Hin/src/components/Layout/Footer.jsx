@@ -49,7 +49,12 @@ const Footer = () => {
                 viewport={{ once: true }}
                 className="mr-3"
               >
-                <FaClinicMedical className="text-3xl text-primary-400" />
+                {/* Replaced FaClinicMedical icon with logo image */}
+                <img
+                  src="/logo.png"
+                  alt="Hin Logo"
+                  className="h-10 w-auto object-contain"
+                />
               </motion.div>
               <motion.span
                 initial={{ opacity: 0, x: -20 }}
@@ -69,8 +74,8 @@ const Footer = () => {
               transition={{ duration: 0.6, delay: 0.3 }}
               viewport={{ once: true }}
             >
-              نظام طبي متكامل يربط بين الأطباء والصيدليات
-              والمرضى وشركات الأدوية لتوفير خدمة طبية أفضل وأكثر كفاءة.
+              نظام طبي متكامل يربط بين الأطباء والصيدليات والمرضى وشركات الأدوية
+              لتوفير خدمة طبية أفضل وأكثر كفاءة.
             </motion.p>
 
             {/* Social Icons */}
@@ -124,7 +129,7 @@ const Footer = () => {
                   viewport={{ once: true }}
                 >
                   <a
-                    href={link.href}
+                    href="#"
                     className="text-gray-400 hover:text-primary-400 transition-colors duration-200"
                   >
                     {link.name}
@@ -188,7 +193,7 @@ const Footer = () => {
           className="border-t border-gray-800 mt-8 pt-6 text-center"
         >
           <p className="text-gray-500 text-sm">
-            جميع الحقوق محفوظة &copy; {currentYear} - هيِّن 
+            جميع الحقوق محفوظة &copy; {currentYear} - هيِّن
           </p>
         </motion.div>
       </div>

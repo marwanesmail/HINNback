@@ -3,7 +3,15 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import { motion } from "framer-motion";
-import { FaExclamationTriangle, FaUserMd, FaInfoCircle } from "react-icons/fa";
+import {
+  FaExclamationTriangle,
+  FaUserMd,
+  FaInfoCircle,
+  FaCheckCircle,
+} from "react-icons/fa";
+
+// Import the doctor data directly
+import { defaultDoctors } from "../../../utils/doctorData";
 
 // Animations (Framer Motion)
 const containerVariants = {
@@ -34,21 +42,30 @@ const BookAppointmentPage = () => {
   const [patientPhone, setPatientPhone] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initialize data from localStorage
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [appointmentId, setAppointmentId] = useState("");
+
+  // Initialize data from default doctors array
   useEffect(() => {
     // هنا هيكون ربط بالباك اند بعدين
     // البيانات التالية سيتم استبدالها بطلب API فعلي في المستقبل
 
-    // Load doctor data from localStorage
-    const doctors = JSON.parse(localStorage.getItem("doctors") || "[]");
-    // Ensure id is parsed as an integer for comparison
-    const foundDoctor = doctors.find((d) => d.id === parseInt(id)) || null;
+    // Load doctor data from default doctors array
+    const foundDoctor =
+      defaultDoctors.find((d) => d.id === parseInt(id)) || null;
+
+    // Use the doctor's actual image if available
+    if (foundDoctor && !foundDoctor.image) {
+      // Only set fallback if no image exists
+      foundDoctor.image =
+        "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=200&q=80";
+    }
+
     setDoctor(foundDoctor);
 
-    // Load appointments data from localStorage
-    const storedAppointments = JSON.parse(
-      localStorage.getItem("appointments") || "[]"
-    );
+    // For appointments, we'll use a temporary approach until backend is connected
+    // In a real app, this would come from the backend
+    const storedAppointments = []; // Temporary empty array
     setAppointments(storedAppointments);
   }, [id]);
 
@@ -75,15 +92,21 @@ const BookAppointmentPage = () => {
   // الحصول على المواعيد المتاحة للطبيب - هنا هيكون ربط بالباك اند بعدين
   const getAvailableTimeSlots = (doctorId, date) => {
     // في المستقبل سيتم استبدال هذا بطلب API فعلي
-    const doctor = JSON.parse(localStorage.getItem("doctors") || "[]").find(
-      (d) => d.id === doctorId
-    );
+    const doctor = defaultDoctors.find((d) => d.id === doctorId);
     if (!doctor) return [];
 
+    // Use the doctor's actual image
+    if (!doctor.image) {
+      doctor.image =
+        "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=200&q=80";
+    }
+
     // Convert date to day of the week (e.g., "saturday")
-    const dayOfWeek = new Date(date).toLocaleDateString("en-US", {
-      weekday: "long", // Use 'long' for full name (e.g., 'sunday')
-    }).toLowerCase();
+    const dayOfWeek = new Date(date)
+      .toLocaleDateString("en-US", {
+        weekday: "long", // Use 'long' for full name (e.g., 'sunday')
+      })
+      .toLowerCase();
 
     if (!doctor.availableDays.includes(dayOfWeek)) {
       return [];
@@ -99,16 +122,15 @@ const BookAppointmentPage = () => {
     let currentTime = new Date(`2000-01-01T${startTime}:00`);
     const endDateTime = new Date(`2000-01-01T${endTime}:00`);
 
-    // Load appointments from localStorage
-    const appointments = JSON.parse(
-      localStorage.getItem("appointments") || "[]"
-    );
+    // For now, we'll simulate appointments by checking against a temporary array
+    // In a real app, this would come from the backend
+    const simulatedAppointments = [];
 
     while (currentTime < endDateTime) {
       const timeString = currentTime.toTimeString().slice(0, 5); // "HH:MM" format
 
       // Check if this slot is already booked
-      const isBooked = appointments.some(
+      const isBooked = simulatedAppointments.some(
         (apt) =>
           apt.doctorId === doctorId &&
           apt.date === date &&
@@ -144,10 +166,10 @@ const BookAppointmentPage = () => {
       const dayOfWeek = date
         .toLocaleDateString("en-US", { weekday: "long" })
         .toLowerCase();
-        
+
       const isAvailable = doctor.availableDays.includes(dayOfWeek);
       const isPast = date.getTime() < today.getTime();
-      
+
       days.push({
         date: date.toISOString().split("T")[0], // YYYY-MM-DD
         dayName,
@@ -187,29 +209,38 @@ const BookAppointmentPage = () => {
         id: Date.now(), // Temporary ID
         doctorId: parseInt(id),
         doctorName: doctor.name,
+        doctorSpecialty: doctor.specialty,
         date: selectedDate,
         time: selectedTime,
         reason,
         patientName,
         patientPhone,
         status: "pending", // Initial status
+        address: doctor.address,
+        fee: doctor.consultationFee,
+        duration: doctor.appointmentDuration,
+        createdAt: new Date().toISOString(),
       };
 
-      // Save to localStorage (Simulated backend storage)
-      const currentAppointments = JSON.parse(
-        localStorage.getItem("appointments") || "[]"
+      // Save appointment to localStorage
+      const existingAppointments = JSON.parse(
+        localStorage.getItem("patientAppointments") || "[]"
       );
-      const updatedAppointments = [...currentAppointments, newAppointment];
-      localStorage.setItem("appointments", JSON.stringify(updatedAppointments));
+      existingAppointments.push(newAppointment);
+      localStorage.setItem(
+        "patientAppointments",
+        JSON.stringify(existingAppointments)
+      );
 
+      // For now, we'll just show a success message without saving to localStorage
+      // In a real app, this would be sent to the backend
       console.log("Appointment booked:", newAppointment);
-      Swal.fire({
-        icon: "success",
-        text: "تم حجز الموعد بنجاح! سيتم التواصل معك قريباً لتأكيد الموعد.",
-        confirmButtonColor: "#16a34a",
-      });
-      // Redirect to patient profile page after success
-      navigate("/patient-profile");
+
+      // Set appointment ID and show success modal instead of SweetAlert
+      setAppointmentId(`SH-2025-${Math.floor(1000 + Math.random() * 9000)}`);
+      setShowSuccessModal(true);
+
+      // Note: We're not redirecting immediately anymore, showing modal first
     } catch (error) {
       console.error("Booking error:", error);
       Swal.fire({
@@ -226,7 +257,7 @@ const BookAppointmentPage = () => {
 
   return (
     <motion.div
-      className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50"
+      className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 pb-16"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -235,15 +266,23 @@ const BookAppointmentPage = () => {
       <motion.div className="bg-white shadow-sm mb-10" variants={itemVariants}>
         <div className="max-w-5xl mx-auto px-4 py-6 text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">حجز موعد</h1>
-          <p className="text-xl font-semibold text-blue-600 mb-3">حجز الآن مع {doctor.name}</p>
+          <p className="text-xl font-semibold text-blue-600 mb-3">
+            حجز الآن مع {doctor.name}
+          </p>
           <p className="text-gray-600">
-            احجز أونلاين أو كلم رقم تليفون العيادة: <a href={`tel:${doctor.phone}`} className="text-blue-600 font-medium hover:underline">{doctor.phone}</a>
+            احجز أونلاين أو كلم رقم تليفون العيادة:{" "}
+            <a
+              href={`tel:${doctor.phone}`}
+              className="text-blue-600 font-medium hover:underline"
+            >
+              {doctor.phone}
+            </a>
           </p>
         </div>
       </motion.div>
 
       <div className="max-w-5xl mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* Booking Form */}
           <motion.form
             onSubmit={handleSubmit}
@@ -369,7 +408,7 @@ const BookAppointmentPage = () => {
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 rows={4}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-550"
                 placeholder="اكتب سبب الزيارة أو الأعراض التي تعاني منها..."
               />
             </motion.div>
@@ -412,37 +451,55 @@ const BookAppointmentPage = () => {
                 ملخص الحجز
               </h3>
               <div className="border-b border-gray-200 pb-4 mb-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <img 
-                    src={doctor.image || "https://via.placeholder.com/60"} 
+                <div className="flex flex-col items-center mb-4">
+                  <img
+                    src={doctor.image}
                     alt={doctor.name}
-                    className="w-16 h-16 rounded-full object-cover border-2 border-blue-200"
+                    className="w-24 h-24 rounded-full object-cover border-4 border-blue-200 mb-3"
+                    onError={(e) => {
+                      // Fallback to generic doctor avatar if image fails to load
+                      e.target.src =
+                        "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=200&q=80";
+                    }}
                   />
-                  <div>
-                    <h4 className="font-semibold text-gray-900">
+                  <div className="text-center">
+                    <h4 className="font-bold text-xl text-gray-900">
                       {doctor.name}
                     </h4>
-                    <p className="text-sm text-gray-600">{doctor.specialty}</p>
+                    <p className="text-lg text-blue-600 font-medium">
+                      {doctor.specialty}
+                    </p>
                   </div>
                 </div>
-                <p className="text-sm text-gray-600">{doctor.address}</p>
+                <p className="text-sm text-gray-600 text-center">
+                  {doctor.address}
+                </p>
               </div>
               <div className="space-y-3">
                 {/* Available Days */}
                 <div className="pb-3 border-b border-gray-100">
-                  <span className="text-gray-600 block mb-2">الأيام المتاحة:</span>
+                  <span className="text-gray-600 block mb-2">
+                    الأيام المتاحة:
+                  </span>
                   <div className="flex flex-wrap gap-1">
                     {doctor.availableDays.map((day) => (
-                      <span 
+                      <span
                         key={day}
                         className="px-2 py-1 bg-green-50 text-green-700 rounded text-xs font-medium"
                       >
-                        {day === 'sunday' ? 'الأحد' : 
-                         day === 'monday' ? 'الاثنين' :
-                         day === 'tuesday' ? 'الثلاثاء' :
-                         day === 'wednesday' ? 'الأربعاء' :
-                         day === 'thursday' ? 'الخميس' :
-                         day === 'friday' ? 'الجمعة' : 'السبت'}
+                        {day === "sunday"
+                          ? "الأحد"
+                          : day === "monday"
+                          ? "الاثنين"
+                          : day === "tuesday"
+                          ? "الثلاثاء"
+                          : day === "wednesday"
+                          ? "الأربعاء"
+                          : day === "thursday"
+                          ? "الخميس"
+                          : day === "friday"
+                          ? "الجمعة"
+                          : "السبت"}
                       </span>
                     ))}
                   </div>
@@ -504,6 +561,51 @@ const BookAppointmentPage = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8 text-center"
+          >
+            <div className="flex justify-center mb-6">
+              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
+                <FaCheckCircle className="text-green-500 text-4xl" />
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">
+              تم الحجز بنجاح!
+            </h2>
+
+            <p className="text-gray-600 mb-6">
+              تم إرسال تأكيد الحجز الإلكتروني، وستصلك رسالة تحتوي على جميع
+              التفاصيل
+            </p>
+
+            <div className="bg-blue-50 rounded-lg p-4 mb-6">
+              <p className="text-sm text-gray-700 font-medium">
+                رقم الحجز الخاص بك:
+              </p>
+              <p className="text-xl font-bold text-blue-600 mt-1">
+                {appointmentId}
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowSuccessModal(false);
+                navigate("/patient-profile?section=appointments");
+              }}
+              className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 font-semibold text-lg"
+            >
+              عرض مواعيدي
+            </button>
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 };

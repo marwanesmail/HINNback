@@ -10,6 +10,7 @@ import {
   FaCheckCircle,
   FaBoxOpen,
 } from "react-icons/fa";
+import StatsGrid from "../../../components/Layout/StatsGrid"; // Import the new StatsGrid component
 
 const CompanyDashboardSection = ({
   orders,
@@ -34,13 +35,13 @@ const CompanyDashboardSection = ({
     const newOrders = orders.filter((o) => o.status === "جديد").length;
     const processing = orders.filter((o) => o.status === "قيد المعالجة").length;
     const completed = orders.filter((o) => o.status === "مكتمل").length;
-    
+
     // Calculate sales
-    const today = new Date().toLocaleDateString('ar-EG');
+    const today = new Date().toLocaleDateString("ar-EG");
     const dailySales = orders
       .filter((o) => o.date === today)
       .reduce((sum, order) => sum + order.total, 0);
-    
+
     const thisMonth = new Date().getMonth();
     const monthlySales = orders
       .filter((o) => {
@@ -60,6 +61,93 @@ const CompanyDashboardSection = ({
       salesGrowth: 12,
     });
   }, [orders, companyData]);
+
+  // Prepare stats data for the StatsGrid component
+  const orderStatsData = [
+    {
+      id: 1,
+      title: "الطلبات الجديدة",
+      value: stats.newOrders,
+      icon: <FaShoppingCart className="text-blue-500 text-xl" />,
+      iconBg: "bg-blue-100",
+      borderLeft: "border-blue-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "طلب في انتظار المعالجة",
+    },
+    {
+      id: 2,
+      title: "قيد التجهيز",
+      value: stats.processingOrders,
+      icon: <FaBoxOpen className="text-orange-500 text-xl" />,
+      iconBg: "bg-orange-100",
+      borderLeft: "border-orange-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "طلب يتم تجهيزه",
+    },
+    {
+      id: 3,
+      title: "مكتملة",
+      value: stats.completedOrders,
+      icon: <FaCheckCircle className="text-green-500 text-xl" />,
+      iconBg: "bg-green-100",
+      borderLeft: "border-green-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "طلب تم توصيله",
+    },
+    {
+      id: 4,
+      title: "إجمالي الطلبات",
+      value: orders.length,
+      icon: <FaTruck className="text-purple-500 text-xl" />,
+      iconBg: "bg-purple-100",
+      borderLeft: "border-purple-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "هذا الشهر",
+    },
+  ];
+
+  const businessStatsData = [
+    {
+      id: 1,
+      title: "مبيعات اليوم",
+      value: `${stats.dailySales.toLocaleString()} ج.م`,
+      icon: <FaChartLine className="text-emerald-500 text-xl" />,
+      iconBg: "bg-emerald-100",
+      borderLeft: "border-emerald-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      trend: stats.salesGrowth,
+      trendIcon: FaChartLine,
+      trendText: "عن أمس",
+    },
+    {
+      id: 2,
+      title: "الصيدليات النشطة",
+      value: stats.activePharmacies,
+      icon: <FaStore className="text-indigo-500 text-xl" />,
+      iconBg: "bg-indigo-100",
+      borderLeft: "border-indigo-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "صيدلية متعاقدة",
+    },
+    {
+      id: 3,
+      title: "إجمالي المنتجات",
+      value: stats.totalProducts,
+      icon: <FaPills className="text-yellow-500 text-xl" />,
+      iconBg: "bg-yellow-100",
+      borderLeft: "border-yellow-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "منتج متاح",
+    },
+  ];
+
   // Variants for the staggered animation
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -78,178 +166,11 @@ const CompanyDashboardSection = ({
 
   return (
     <div className="space-y-6">
-      {/* Stats Grid - Updated with better logic */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-      >
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm p-6 border border-blue-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-blue-700">
-                الطلبات الجديدة
-              </p>
-              <p className="text-3xl font-bold text-blue-900 mt-2">
-                {stats.newOrders}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
-              <FaShoppingCart className="text-blue-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-blue-600 mt-4 font-medium">طلب في انتظار المعالجة</p>
-        </motion.div>
+      {/* Order Stats Grid - Using the new reusable component */}
+      <StatsGrid stats={orderStatsData} columns={4} />
 
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-sm p-6 border border-orange-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-orange-700">
-                قيد التجهيز
-              </p>
-              <p className="text-3xl font-bold text-orange-900 mt-2">
-                {stats.processingOrders}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-orange-200 rounded-lg flex items-center justify-center">
-              <FaBoxOpen className="text-orange-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-orange-600 mt-4 font-medium">طلب يتم تجهيزه</p>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-sm p-6 border border-green-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-green-700">
-                مكتملة
-              </p>
-              <p className="text-3xl font-bold text-green-900 mt-2">
-                {stats.completedOrders}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-green-200 rounded-lg flex items-center justify-center">
-              <FaCheckCircle className="text-green-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-green-600 mt-4 font-medium">طلب تم توصيله</p>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-sm p-6 border border-purple-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-purple-700">
-                إجمالي الطلبات
-              </p>
-              <p className="text-3xl font-bold text-purple-900 mt-2">
-                {orders.length}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-purple-200 rounded-lg flex items-center justify-center">
-              <FaTruck className="text-purple-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-purple-600 mt-4 font-medium">هذا الشهر</p>
-        </motion.div>
-      </motion.div>
-
-      {/* Sales and Business Stats */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 md:grid-cols-3 gap-6"
-      >
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl shadow-sm p-6 border border-emerald-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-emerald-700">
-                مبيعات اليوم
-              </p>
-              <p className="text-3xl font-bold text-emerald-900 mt-2">
-                {stats.dailySales.toLocaleString()} ج.م
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-emerald-200 rounded-lg flex items-center justify-center">
-              <FaChartLine className="text-emerald-700 text-xl" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center">
-            <FaChartLine className="text-green-600 text-sm ml-1" />
-            <p className="text-sm text-emerald-600 font-medium">+{stats.salesGrowth}% عن أمس</p>
-          </div>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl shadow-sm p-6 border border-indigo-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-indigo-700">
-                الصيدليات النشطة
-              </p>
-              <p className="text-3xl font-bold text-indigo-900 mt-2">
-                {stats.activePharmacies}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-indigo-200 rounded-lg flex items-center justify-center">
-              <FaStore className="text-indigo-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-indigo-600 mt-4 font-medium">صيدلية متعاقدة</p>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl shadow-sm p-6 border border-yellow-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-yellow-700">
-                إجمالي المنتجات
-              </p>
-              <p className="text-3xl font-bold text-yellow-900 mt-2">
-                {stats.totalProducts}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-yellow-200 rounded-lg flex items-center justify-center">
-              <FaPills className="text-yellow-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-yellow-600 mt-4 font-medium">منتج متاح</p>
-        </motion.div>
-      </motion.div>
+      {/* Business Stats Grid - Using the new reusable component */}
+      <StatsGrid stats={businessStatsData} columns={3} />
 
       {/* Monthly Revenue Card */}
       <motion.div
@@ -264,7 +185,9 @@ const CompanyDashboardSection = ({
               <FaChartLine className="text-teal-600 text-2xl" />
             </div>
             <div>
-              <p className="text-sm font-medium text-teal-700">إجمالي مبيعات الشهر</p>
+              <p className="text-sm font-medium text-teal-700">
+                إجمالي مبيعات الشهر
+              </p>
               <p className="text-4xl font-bold text-teal-900 mt-2">
                 {stats.monthlySales.toLocaleString()} ج.م
               </p>

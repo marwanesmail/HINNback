@@ -63,7 +63,7 @@ const OffersCarousel = () => {
     subtitle: "خصومات كبيرة على الطلبات بالجملة",
     description: "استفيدوا من خصومات خاصة عند طلب الأدوية والمستلزمات الطبية بكميات كبيرة من شركتنا",
     image:
-      "https://media.gemini.media/img/Medium/2025/1/7/2025_1_7_19_59_27_575.webp",
+      "https://euphoriagroup.com.eg/_next/image?url=https%3A%2F%2Fapi.euphoriagroup.com.eg%2Fuploads%2Fblogitems%2F58667.webp&w=1920&q=75",
     buttonText: "استفد الآن",
     bgGradient: "from-indigo-500 via-blue-500 to-indigo-600",
     icon: FaIndustry,

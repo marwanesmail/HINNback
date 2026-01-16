@@ -10,6 +10,7 @@ import {
   FaBoxes,
   FaCheckCircle,
 } from "react-icons/fa";
+import StatsGrid from "../../../components/Layout/StatsGrid"; // Import the new StatsGrid component
 
 const PharmacyDashboardSection = ({
   prescriptions,
@@ -74,6 +75,79 @@ const PharmacyDashboardSection = ({
     exchangeRequests,
     pharmacyData,
   ]);
+
+  // Prepare stats data for the StatsGrid component
+  const statsData = [
+    {
+      id: 1,
+      title: "الروشتات الجديدة",
+      value: stats.pendingPrescriptions,
+      icon: <FaPrescription className="text-yellow-500 text-xl" />,
+      iconBg: "bg-yellow-100",
+      borderLeft: "border-yellow-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "في انتظار المراجعة",
+    },
+    {
+      id: 2,
+      title: "طلبات أدوية جديدة",
+      value: stats.pendingRequests,
+      icon: <FaBell className="text-orange-500 text-xl" />,
+      iconBg: "bg-orange-100",
+      borderLeft: "border-orange-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "من المرضى القريبين",
+    },
+    {
+      id: 3,
+      title: "المخزون المنخفض",
+      value: stats.lowStock,
+      icon: <FaExclamationTriangle className="text-red-500 text-xl" />,
+      iconBg: "bg-red-100",
+      borderLeft: "border-red-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "يحتاج إعادة طلب",
+    },
+    {
+      id: 4,
+      title: "طلبات التبادل",
+      value: stats.pendingExchanges,
+      icon: <FaExchangeAlt className="text-blue-500 text-xl" />,
+      iconBg: "bg-blue-100",
+      borderLeft: "border-blue-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "من صيدليات أخرى",
+    },
+    {
+      id: 5,
+      title: "إجمالي المبيعات",
+      value: stats.totalSales.toLocaleString(),
+      icon: <FaMoneyBillWave className="text-green-500 text-xl" />,
+      iconBg: "bg-green-100",
+      borderLeft: "border-green-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      trend: stats.salesGrowth,
+      trendIcon: FaChartLine,
+      trendText: "هذا الشهر",
+    },
+    {
+      id: 6,
+      title: "قيمة المخزون",
+      value: stats.inventoryValue.toLocaleString(),
+      icon: <FaBoxes className="text-purple-500 text-xl" />,
+      iconBg: "bg-purple-100",
+      borderLeft: "border-purple-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "جنيه إجمالي",
+    },
+  ];
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -96,158 +170,8 @@ const PharmacyDashboardSection = ({
 
   return (
     <div className="space-y-6">
-      {/* Stats Grid - Updated with 6 cards */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-      >
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl shadow-sm p-6 border border-yellow-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-yellow-700">
-                الروشتات الجديدة
-              </p>
-              <p className="text-3xl font-bold text-yellow-900 mt-2">
-                {stats.pendingPrescriptions}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-yellow-200 rounded-lg flex items-center justify-center">
-              <FaPrescription className="text-yellow-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-yellow-600 mt-4 font-medium">
-            في انتظار المراجعة
-          </p>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-sm p-6 border border-orange-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-orange-700">
-                طلبات أدوية جديدة
-              </p>
-              <p className="text-3xl font-bold text-orange-900 mt-2">
-                {stats.pendingRequests}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-orange-200 rounded-lg flex items-center justify-center">
-              <FaBell className="text-orange-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-orange-600 mt-4 font-medium">
-            من المرضى القريبين
-          </p>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl shadow-sm p-6 border border-red-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-red-700">
-                المخزون المنخفض
-              </p>
-              <p className="text-3xl font-bold text-red-900 mt-2">
-                {stats.lowStock}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-red-200 rounded-lg flex items-center justify-center">
-              <FaExclamationTriangle className="text-red-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-red-600 mt-4 font-medium">
-            يحتاج إعادة طلب
-          </p>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm p-6 border border-blue-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-blue-700">طلبات التبادل</p>
-              <p className="text-3xl font-bold text-blue-900 mt-2">
-                {stats.pendingExchanges}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
-              <FaExchangeAlt className="text-blue-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-blue-600 mt-4 font-medium">
-            من صيدليات أخرى
-          </p>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-sm p-6 border border-green-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-green-700">
-                إجمالي المبيعات
-              </p>
-              <p className="text-3xl font-bold text-green-900 mt-2">
-                {stats.totalSales.toLocaleString()}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-green-200 rounded-lg flex items-center justify-center">
-              <FaMoneyBillWave className="text-green-700 text-xl" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center">
-            <FaChartLine className="text-green-600 text-sm ml-1" />
-            <p className="text-sm text-green-600 font-medium">
-              +{stats.salesGrowth}% هذا الشهر
-            </p>
-          </div>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-sm p-6 border border-purple-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-purple-700">
-                قيمة المخزون
-              </p>
-              <p className="text-3xl font-bold text-purple-900 mt-2">
-                {stats.inventoryValue.toLocaleString()}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-purple-200 rounded-lg flex items-center justify-center">
-              <FaBoxes className="text-purple-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-purple-600 mt-4 font-medium">
-            جنيه إجمالي
-          </p>
-        </motion.div>
-      </motion.div>
+      {/* Stats Grid - Using the new reusable component */}
+      <StatsGrid stats={statsData} columns={3} />
 
       {/* Completed Today Card */}
       <motion.div

@@ -100,7 +100,7 @@ function Layout({ children }) {
   );
 }
 
-// شاشة التحميل الرايقة ✨
+// شاشة التحميل الرايقة 
 function LoadingScreen() {
   return (
     <div className="flex items-center justify-center h-screen bg-white">
@@ -193,6 +193,7 @@ function App() {
                       <p className="text-gray-600">الصفحة غير موجودة</p>
                     </div>
                   }
+                  
                 />
               </Routes>
             </Suspense>

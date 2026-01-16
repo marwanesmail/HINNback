@@ -138,7 +138,7 @@ const ProductsSection = () => {
         viewport={{ once: true, amount: 0.2 }}
       >
         {/* عنوان القسم */}
-        <motion.div 
+        <motion.div
           className="text-center mb-16"
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -146,18 +146,11 @@ const ProductsSection = () => {
           viewport={{ once: true, amount: 0.2 }}
         >
           <div className="mb-8">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text mb-4">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 mb-4">
               منتجاتنا المميزة
             </h2>
 
-            {/* Decorative Line */}
-            <div className="flex items-center justify-center mb-6">
-              <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"></div>
-              <div className="w-4 h-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mx-3"></div>
-              <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"></div>
-            </div>
-
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl text-gray-600 mt-4 max-w-3xl mx-auto leading-relaxed">
               اكتشف مجموعة واسعة من المنتجات الطبية والصحية عالية الجودة
             </p>
           </div>
@@ -219,7 +212,7 @@ const ProductsSection = () => {
         </motion.div>
 
         {/* عدد المنتجات */}
-        <motion.div 
+        <motion.div
           className="mb-8"
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -250,7 +243,7 @@ const ProductsSection = () => {
           viewport={{ once: true, amount: 0.2 }}
         >
           {filteredAndSortedProducts.map((product) => (
-            <motion.div 
+            <motion.div
               key={product.id}
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}

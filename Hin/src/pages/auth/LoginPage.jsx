@@ -116,7 +116,7 @@ const LoginPage = () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const userData = {
-        name: email.split('@')[0],
+        name: email.split("@")[0],
         email: email,
         userType: selectedUserType,
         loginTime: new Date().toISOString(),
@@ -124,12 +124,15 @@ const LoginPage = () => {
 
       login(userData);
 
-let successMessages = {
-  doctor: "تم تسجيل الدخول بنجاح دكتور! سيتم تحويلك الآن إلى لوحة التحكم الخاصة بك...",
-  pharmacy: "تم تسجيل الدخول بنجاح صيدلي! سيتم تحويلك الآن إلى لوحة التحكم الخاصة بك...",
-  company: "تم تسجيل الدخول بنجاح شركة! سيتم تحويلك الآن إلى لوحة التحكم الخاصة بك...",
-  patient: "تم تسجيل الدخول بنجاح! سيتم تحويلك الآن إلى صفحتك...",
-};
+      let successMessages = {
+        doctor:
+          "تم تسجيل الدخول بنجاح دكتور! سيتم تحويلك الآن إلى لوحة التحكم الخاصة بك...",
+        pharmacy:
+          "تم تسجيل الدخول بنجاح صيدلي! سيتم تحويلك الآن إلى لوحة التحكم الخاصة بك...",
+        company:
+          "تم تسجيل الدخول بنجاح شركة! سيتم تحويلك الآن إلى لوحة التحكم الخاصة بك...",
+        patient: "تم تسجيل الدخول بنجاح! سيتم تحويلك الآن إلى صفحتك...",
+      };
 
       Swal.fire({
         title: "تم تسجيل الدخول بنجاح ",

@@ -10,6 +10,7 @@ import {
   FaChartLine,
   FaUserClock,
 } from "react-icons/fa";
+import StatsGrid from "../../../components/Layout/StatsGrid"; // Import the new StatsGrid component
 
 const DashboardSection = ({
   doctorData,
@@ -30,15 +31,17 @@ const DashboardSection = ({
 
   useEffect(() => {
     // Simulate real statistics calculation
-    const today = new Date().toLocaleDateString('ar-EG');
+    const today = new Date().toLocaleDateString("ar-EG");
     const thisMonth = new Date().getMonth();
-    
-    const newPrescriptions = prescriptions.filter(p => p.status === "جديدة").length;
-    const completedThisMonth = prescriptions.filter(p => {
+
+    const newPrescriptions = prescriptions.filter(
+      (p) => p.status === "جديدة"
+    ).length;
+    const completedThisMonth = prescriptions.filter((p) => {
       const prescDate = new Date(p.date);
       return prescDate.getMonth() === thisMonth && p.status === "مكتملة";
     }).length;
-    
+
     setStats({
       totalPatients: doctorData.patients || 0,
       todayAppointments: Math.floor(Math.random() * 8) + 2, // Simulated
@@ -48,6 +51,57 @@ const DashboardSection = ({
       monthlyGrowth: 12,
     });
   }, [prescriptions, doctorData]);
+
+  // Prepare stats data for the StatsGrid component
+  const statsData = [
+    {
+      id: 1,
+      title: "إجمالي المرضى",
+      value: stats.totalPatients,
+      icon: <FaUsers className="text-blue-500 text-xl" />,
+      iconBg: "bg-blue-100",
+      borderLeft: "border-blue-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      trend: stats.monthlyGrowth,
+      trendIcon: FaChartLine,
+      trendText: "من الشهر الماضي",
+    },
+    {
+      id: 2,
+      title: "مواعيد اليوم",
+      value: stats.todayAppointments,
+      icon: <FaCalendarCheck className="text-purple-500 text-xl" />,
+      iconBg: "bg-purple-100",
+      borderLeft: "border-purple-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "موعد محجوز لهذا اليوم",
+    },
+    {
+      id: 3,
+      title: "مواعيد مكتملة",
+      value: stats.completedAppointments,
+      icon: <FaUserClock className="text-green-500 text-xl" />,
+      iconBg: "bg-green-100",
+      borderLeft: "border-green-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "هذا الشهر",
+    },
+    {
+      id: 4,
+      title: "روشتات جديدة",
+      value: stats.newPrescriptions,
+      icon: <FaPrescription className="text-yellow-500 text-xl" />,
+      iconBg: "bg-yellow-100",
+      borderLeft: "border-yellow-500",
+      textColor: "text-gray-600",
+      valueColor: "text-gray-900",
+      subtitle: "تحتاج مراجعة",
+    },
+  ];
+
   // Variants for the staggered animation
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -76,96 +130,8 @@ const DashboardSection = ({
 
   return (
     <div className="space-y-6">
-      {/* Stats Grid */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-      >
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm p-6 border border-blue-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-blue-700">إجمالي المرضى</p>
-              <p className="text-3xl font-bold text-blue-900 mt-2">
-                {stats.totalPatients}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
-              <FaUsers className="text-blue-700 text-xl" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center">
-            <FaChartLine className="text-green-600 text-sm ml-1" />
-            <p className="text-sm text-blue-600 font-medium">+{stats.monthlyGrowth}% من الشهر الماضي</p>
-          </div>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-sm p-6 border border-purple-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-purple-700">مواعيد اليوم</p>
-              <p className="text-3xl font-bold text-purple-900 mt-2">
-                {stats.todayAppointments}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-purple-200 rounded-lg flex items-center justify-center">
-              <FaCalendarCheck className="text-purple-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-purple-600 mt-4 font-medium">موعد محجوز لهذا اليوم</p>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-sm p-6 border border-green-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-green-700">مواعيد مكتملة</p>
-              <p className="text-3xl font-bold text-green-900 mt-2">
-                {stats.completedAppointments}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-green-200 rounded-lg flex items-center justify-center">
-              <FaUserClock className="text-green-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-green-600 mt-4 font-medium">هذا الشهر</p>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl shadow-sm p-6 border border-yellow-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-yellow-700">روشتات جديدة</p>
-              <p className="text-3xl font-bold text-yellow-900 mt-2">
-                {stats.newPrescriptions}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-yellow-200 rounded-lg flex items-center justify-center">
-              <FaPrescription className="text-yellow-700 text-xl" />
-            </div>
-          </div>
-          <p className="text-sm text-yellow-600 mt-4 font-medium">تحتاج مراجعة</p>
-        </motion.div>
-      </motion.div>
+      {/* Stats Grid - Using the new reusable component */}
+      <StatsGrid stats={statsData} columns={4} />
 
       {/* Rating Card */}
       <motion.div
@@ -182,7 +148,9 @@ const DashboardSection = ({
             <div>
               <p className="text-sm font-medium text-amber-700">تقييم المرضى</p>
               <div className="flex items-center mt-2">
-                <p className="text-4xl font-bold text-amber-900">{stats.averageRating}</p>
+                <p className="text-4xl font-bold text-amber-900">
+                  {stats.averageRating}
+                </p>
                 <p className="text-lg text-amber-600 mr-2">/ 5.0</p>
               </div>
             </div>
@@ -200,7 +168,9 @@ const DashboardSection = ({
                 />
               ))}
             </div>
-            <p className="text-sm text-amber-600 font-medium">بناءً على {stats.totalPatients} تقييم</p>
+            <p className="text-sm text-amber-600 font-medium">
+              بناءً على {stats.totalPatients} تقييم
+            </p>
           </div>
         </div>
       </motion.div>

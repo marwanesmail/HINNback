@@ -116,6 +116,52 @@ const DoctorAppointmentsPage = () => {
     setAppointments(storedAppointments);
   }, []);
 
+  // Watch for changes in localStorage to update appointments data
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === "appointments") {
+        // Load updated appointments data from localStorage
+        const storedAppointments = JSON.parse(
+          localStorage.getItem("appointments") || "[]"
+        );
+        setAppointments(storedAppointments);
+      } else if (e.key === "doctors") {
+        // Load updated doctor data from localStorage
+        const doctors = JSON.parse(localStorage.getItem("doctors") || "[]");
+        const doctor = doctors.find((d) => d.id === 1) || doctors[0] || null;
+        setCurrentDoctor(doctor);
+      }
+    };
+
+    // Add event listener for localStorage changes
+    window.addEventListener("storage", handleStorageChange);
+
+    // Also check for changes in the same tab
+    const interval = setInterval(() => {
+      const storedAppointments = JSON.parse(
+        localStorage.getItem("appointments") || "[]"
+      );
+
+      // Only update if appointments data has changed
+      if (JSON.stringify(appointments) !== JSON.stringify(storedAppointments)) {
+        setAppointments(storedAppointments);
+      }
+
+      // Check for doctor data changes
+      const doctors = JSON.parse(localStorage.getItem("doctors") || "[]");
+      const doctor = doctors.find((d) => d.id === 1) || doctors[0] || null;
+      if (JSON.stringify(currentDoctor) !== JSON.stringify(doctor)) {
+        setCurrentDoctor(doctor);
+      }
+    }, 2000); // Check every 2 seconds
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [appointments, currentDoctor]);
+
   const getStatusColor = (status) => {
     switch (status) {
       case "confirmed":
@@ -176,7 +222,7 @@ const DoctorAppointmentsPage = () => {
     if (selectedAppointment && modalAction) {
       let newStatus = "";
       let message = "";
-      
+
       switch (modalAction) {
         case "confirm":
           newStatus = "confirmed";
@@ -195,23 +241,21 @@ const DoctorAppointmentsPage = () => {
       }
 
       // Update appointment status
-      const updatedAppointments = appointments.map(apt => 
-        apt.id === selectedAppointment.id 
-          ? { ...apt, status: newStatus }
-          : apt
+      const updatedAppointments = appointments.map((apt) =>
+        apt.id === selectedAppointment.id ? { ...apt, status: newStatus } : apt
       );
-      
+
       setAppointments(updatedAppointments);
-      
+
       // Save to localStorage
       localStorage.setItem("appointments", JSON.stringify(updatedAppointments));
 
-      Swal.fire({ 
-        icon: "success", 
+      Swal.fire({
+        icon: "success",
         title: "نجح",
         text: message,
         confirmButtonText: "موافق",
-        confirmButtonColor: "#3b82f6"
+        confirmButtonColor: "#3b82f6",
       });
     }
 
@@ -237,16 +281,28 @@ const DoctorAppointmentsPage = () => {
       html: `
         <div class="text-right" style="direction: rtl;">
           <div class="mb-3">
-            <p class="text-gray-600 mb-2"><strong>العمر:</strong> ${appointment.patientAge} سنة</p>
-            <p class="text-gray-600 mb-2"><strong>سبب الزيارة:</strong> ${appointment.reason}</p>
-            ${appointment.notes ? `<p class="text-gray-600 mb-2"><strong>ملاحظات:</strong> ${appointment.notes}</p>` : ''}
-            ${appointment.isNewPatient ? '<span class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full mt-2">مريض جديد</span>' : ''}
+            <p class="text-gray-600 mb-2"><strong>العمر:</strong> ${
+              appointment.patientAge
+            } سنة</p>
+            <p class="text-gray-600 mb-2"><strong>سبب الزيارة:</strong> ${
+              appointment.reason
+            }</p>
+            ${
+              appointment.notes
+                ? `<p class="text-gray-600 mb-2"><strong>ملاحظات:</strong> ${appointment.notes}</p>`
+                : ""
+            }
+            ${
+              appointment.isNewPatient
+                ? '<span class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full mt-2">مريض جديد</span>'
+                : ""
+            }
           </div>
         </div>
       `,
-      icon: 'info',
-      confirmButtonText: 'إغلاق',
-      confirmButtonColor: '#3b82f6',
+      icon: "info",
+      confirmButtonText: "إغلاق",
+      confirmButtonColor: "#3b82f6",
       width: 600,
     });
   };
@@ -427,14 +483,30 @@ const DoctorAppointmentsPage = () => {
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
                   <tr>
-                    <th className="px-6 py-4 text-right text-sm font-bold">#</th>
-                    <th className="px-6 py-4 text-right text-sm font-bold">اسم المريض</th>
-                    <th className="px-6 py-4 text-right text-sm font-bold">التاريخ</th>
-                    <th className="px-6 py-4 text-right text-sm font-bold">الوقت</th>
-                    <th className="px-6 py-4 text-right text-sm font-bold">رقم الهاتف</th>
-                    <th className="px-6 py-4 text-right text-sm font-bold">الحالة</th>
-                    <th className="px-6 py-4 text-right text-sm font-bold">التفاصيل</th>
-                    <th className="px-6 py-4 text-center text-sm font-bold">الإجراءات</th>
+                    <th className="px-6 py-4 text-right text-sm font-bold">
+                      #
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-bold">
+                      اسم المريض
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-bold">
+                      التاريخ
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-bold">
+                      الوقت
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-bold">
+                      رقم الهاتف
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-bold">
+                      الحالة
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-bold">
+                      التفاصيل
+                    </th>
+                    <th className="px-6 py-4 text-center text-sm font-bold">
+                      الإجراءات
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -466,11 +538,14 @@ const DoctorAppointmentsPage = () => {
                         <td className="px-6 py-4 text-sm text-gray-700">
                           <div className="flex items-center gap-2">
                             <FaCalendar className="text-blue-500" />
-                            {new Date(appointment.date).toLocaleDateString("ar-EG", {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric'
-                            })}
+                            {new Date(appointment.date).toLocaleDateString(
+                              "ar-EG",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700">
@@ -515,7 +590,12 @@ const DoctorAppointmentsPage = () => {
                                 <motion.button
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.95 }}
-                                  onClick={() => handleAppointmentAction(appointment, "confirm")}
+                                  onClick={() =>
+                                    handleAppointmentAction(
+                                      appointment,
+                                      "confirm"
+                                    )
+                                  }
                                   className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
                                   title="تأكيد"
                                 >
@@ -524,7 +604,12 @@ const DoctorAppointmentsPage = () => {
                                 <motion.button
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.95 }}
-                                  onClick={() => handleAppointmentAction(appointment, "cancel")}
+                                  onClick={() =>
+                                    handleAppointmentAction(
+                                      appointment,
+                                      "cancel"
+                                    )
+                                  }
                                   className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
                                   title="رفض"
                                 >
@@ -537,7 +622,12 @@ const DoctorAppointmentsPage = () => {
                                 <motion.button
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.95 }}
-                                  onClick={() => handleAppointmentAction(appointment, "complete")}
+                                  onClick={() =>
+                                    handleAppointmentAction(
+                                      appointment,
+                                      "complete"
+                                    )
+                                  }
                                   className="p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
                                   title="تسجيل كمكتمل"
                                 >
@@ -546,7 +636,12 @@ const DoctorAppointmentsPage = () => {
                                 <motion.button
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.95 }}
-                                  onClick={() => handleAppointmentAction(appointment, "cancel")}
+                                  onClick={() =>
+                                    handleAppointmentAction(
+                                      appointment,
+                                      "cancel"
+                                    )
+                                  }
                                   className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
                                   title="إلغاء"
                                 >

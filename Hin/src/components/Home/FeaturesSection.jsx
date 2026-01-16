@@ -12,7 +12,7 @@ const containerVariants = {
   },
 };
 
-// لكل عنصر داخل الكارت
+// لكل عنصر داخل الكارد
 const itemVariants = {
   hidden: { opacity: 0, y: 30 },
   show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
@@ -23,8 +23,7 @@ const FeaturesSection = () => {
     {
       icon: FaUser,
       title: "للمرضى",
-      description:
-        "استلام الأدوية الموصوفة بسهولة وتتبع تاريخ الوصفات الطبية.",
+      description: "استلام الأدوية الموصوفة بسهولة وتتبع تاريخ الوصفات الطبية.",
       gradient: "from-purple-400 to-pink-600",
     },
     {
@@ -73,20 +72,13 @@ const FeaturesSection = () => {
         >
           <motion.h2
             variants={itemVariants}
-            className="text-4xl md:text-5xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text mb-6"
+            className="text-4xl md:text-5xl font-bold text-gray-800 mb-4"
           >
-            مميزات{" "}
-            <span className="text-transparent bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text">
-              هيِّن
-            </span>
+            مميزات هيِّن
           </motion.h2>
-          <motion.div
-            variants={itemVariants}
-            className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full"
-          ></motion.div>
           <motion.p
             variants={itemVariants}
-            className="text-xl text-gray-600 mt-6 max-w-3xl mx-auto"
+            className="text-xl text-gray-600 mt-4 max-w-3xl mx-auto"
           >
             نظام شامل يخدم جميع أطراف العملية الطبية بكفاءة وسهولة
           </motion.p>
