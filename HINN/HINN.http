@@ -1,0 +1,6 @@
+@HINN_HostAddress = http://localhost:5176
+
+GET {{HINN_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

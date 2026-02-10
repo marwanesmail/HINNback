@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36414.22 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HINN", "HINN\HINN.csproj", "{C1FE333B-32A2-42E5-ADE2-F5E5C2C6D58C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C1FE333B-32A2-42E5-ADE2-F5E5C2C6D58C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1FE333B-32A2-42E5-ADE2-F5E5C2C6D58C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1FE333B-32A2-42E5-ADE2-F5E5C2C6D58C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1FE333B-32A2-42E5-ADE2-F5E5C2C6D58C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F20B7415-B170-488C-9C74-A0A86C3DE996}
+	EndGlobalSection
+EndGlobal
