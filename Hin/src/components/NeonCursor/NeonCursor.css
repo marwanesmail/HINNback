@@ -1,0 +1,62 @@
+.neon-cursor-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.cursor-main {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-color: #4f46e5; /* لون موحد */
+  border-radius: 50%;
+  box-shadow: 0 0 8px #4f46e5, 0 0 15px #4f46e5, 0 0 20px #4f46e5;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.cursor-trail {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 2px solid #4f46e5;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 12px rgba(79, 70, 229, 0.5),
+    inset 0 0 12px rgba(79, 70, 229, 0.2);
+  will-change: transform;
+  pointer-events: none;
+}
+
+.cursor-glow {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background: rgba(79, 70, 229, 0.2);
+  border-radius: 50%;
+  opacity: 0.4;
+  will-change: transform;
+  pointer-events: none;
+}
+
+/* Hide default cursor on desktop */
+@media (pointer: fine) {
+  * {
+    cursor: none !important;
+  }
+
+  input,
+  textarea,
+  [contenteditable] {
+    cursor: text !important;
+  }
+}
+
+/* Hide neon cursor on mobile */
+@media (pointer: coarse) {
+  .neon-cursor-container {
+    display: none;
+  }
+}

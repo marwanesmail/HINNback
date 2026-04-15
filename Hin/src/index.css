@@ -1,0 +1,87 @@
+/* Cairo Local Fonts */
+@font-face {
+  font-family: "Cairo";
+  src: url("/fonts/Cairo-Light.woff2") format("woff2"),
+       url("/fonts/Cairo-Light.woff") format("woff");
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Cairo";
+  src: url("/fonts/Cairo-Regular.woff2") format("woff2"),
+       url("/fonts/Cairo-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Cairo";
+  src: url("/fonts/Cairo-Medium.woff2") format("woff2"),
+       url("/fonts/Cairo-Medium.woff") format("woff");
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Cairo";
+  src: url("/fonts/Cairo-SemiBold.woff2") format("woff2"),
+       url("/fonts/Cairo-SemiBold.woff") format("woff");
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Cairo";
+  src: url("/fonts/Cairo-Bold.woff2") format("woff2"),
+       url("/fonts/Cairo-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    font-family: "Cairo", sans-serif;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+    direction: rtl;
+  }
+
+  html {
+    direction: rtl;
+    /* Custom scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: #4f46e5 #e5e7eb;
+  }
+
+  /* Webkit browsers scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #e5e7eb;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #4f46e5, #7c3aed);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #4338ca, #6d28d9);
+  }
+
+  /* Smooth scrolling behavior */
+  html {
+    scroll-behavior: smooth;
+  }
+}
