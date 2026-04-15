@@ -6,6 +6,7 @@ using MyHealthcareApi.Data;
 using MyHealthcareApi.Hubs;
 using MyHealthcareApi.Models;
 using MyHealthcareApi.Constants;
+using MyHealthcareApi.Services;
 using System;
 using System.Text;
 
@@ -56,6 +57,18 @@ builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddScoped<MyHealthcareApi.Services.GeoLocationService>();
 builder.Services.AddScoped<MyHealthcareApi.Services.FuzzySearchService>();
 builder.Services.AddScoped<MyHealthcareApi.Services.RatingService>();
+
+// New Services: Email, SMS, Rate Limiting, Audit Logging
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddSingleton<IEmailService, EmailService>();
+
+builder.Services.Configure<SmsSettings>(builder.Configuration.GetSection("SmsSettings"));
+builder.Services.AddSingleton<ISmsService, SmsService>();
+
+builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
 var app = builder.Build();
 

@@ -39,5 +39,56 @@ namespace MyHealthcareApi.Models
 
         //  وقت الرد
         public DateTime RespondedAt { get; set; } = DateTime.UtcNow;
+
+        // ═══════════════════════════════════════════════════════
+        // بيانات إضافية للأدوية المصروفة
+        // ═══════════════════════════════════════════════════════
+
+        /// <summary>
+        /// هل تم صرف الدواء فعلاً؟
+        /// </summary>
+        public bool IsDispensed { get; set; } = false;
+
+        /// <summary>
+        /// تاريخ الصرف
+        /// </summary>
+        public DateTime? DispensedAt { get; set; }
+
+        /// <summary>
+        /// كمية الدواء المصروفة
+        /// </summary>
+        public int? Quantity { get; set; }
+
+        /// <summary>
+        /// تعليمات الاستخدام من الصيدلي
+        /// </summary>
+        public string? UsageInstructions { get; set; }
+
+        /// <summary>
+        /// تاريخ انتهاء الصلاحية
+        /// </summary>
+        public DateTime? ExpiryDate { get; set; }
+
+        /// <summary>
+        /// رقم التشغيلة (Batch Number)
+        /// </summary>
+        [MaxLength(100)]
+        public string? BatchNumber { get; set; }
+
+        /// <summary>
+        /// حالة الطلب من المريض
+        /// </summary>
+        public ResponsePatientStatus PatientStatus { get; set; } = ResponsePatientStatus.Pending;
+    }
+
+    /// <summary>
+    /// حالة الرد من منظور المريض
+    /// </summary>
+    public enum ResponsePatientStatus
+    {
+        Pending,      // لسه ما شافش
+        Viewed,       // شاف الرد
+        Accepted,     // قبل العرض
+        Rejected      // رفض العرض
     }
 }

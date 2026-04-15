@@ -9,6 +9,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Collections.Generic;
+using MyHealthcareApi.Services;
 
 namespace MyHealthcareApi.Controllers
 {
@@ -21,19 +22,31 @@ namespace MyHealthcareApi.Controllers
         private readonly AppDbContext _context;
         private readonly IConfiguration _config;
         private readonly IWebHostEnvironment _env;
+        private readonly IEmailService _emailService;
+        private readonly ISmsService _smsService;
+        private readonly IRateLimitService _rateLimitService;
+        private readonly IAuditLogService _auditService;
 
         public AuthController(
             UserManager<AppUser> userManager,
             SignInManager<AppUser> signInManager,
             AppDbContext context,
             IConfiguration config,
-            IWebHostEnvironment env)
+            IWebHostEnvironment env,
+            IEmailService emailService,
+            ISmsService smsService,
+            IRateLimitService rateLimitService,
+            IAuditLogService auditService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _context = context;
             _config = config;
             _env = env;
+            _emailService = emailService;
+            _smsService = smsService;
+            _rateLimitService = rateLimitService;
+            _auditService = auditService;
         }
 
         //  تسجيل صيدلية
@@ -67,6 +80,19 @@ namespace MyHealthcareApi.Controllers
 
             _context.Pharmacies.Add(pharmacy);
             await _context.SaveChangesAsync();
+
+            // إرسال بريد ترحيبي
+            await _emailService.SendWelcomeEmailAsync(user.Email!, user.FullName ?? model.PharmacyName);
+            
+            // Audit Log
+            await _auditService.LogAsync(
+                user.Id, user.Email!, AuditActionTypes.Register,
+                entityType: "Pharmacy",
+                entityId: Guid.TryParse(pharmacy.Id.ToString(), out var guid) ? guid : (Guid?)null,
+                description: "New pharmacy registered",
+                newData: new { pharmacy.PharmacyName, pharmacy.Address },
+                success: true
+            );
 
             return Ok(new { Message = "تم تسجيل الصيدلية بنجاح  بانتظار موافقة الأدمن" });
         }
@@ -134,29 +160,156 @@ namespace MyHealthcareApi.Controllers
             return Ok(new { Message = "تم تسجيل شركة الأدوية بنجاح  بانتظار موافقة الأدمن" });
         }
 
+        //  تسجيل مريض جديد مع بيانات صحية كاملة
+        [HttpPost("register-patient")]
+        public async Task<IActionResult> RegisterPatient([FromBody] PatientRegisterDto model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var user = new AppUser
+            {
+                UserName = model.Email,
+                Email = model.Email,
+                FullName = model.FullName,
+                PhoneNumber = model.PhoneNumber
+            };
+
+            var result = await _userManager.CreateAsync(user, model.Password);
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
+
+            //  إضافة الدور المناسب
+            await _userManager.AddToRoleAsync(user, "Patient");
+
+            //  إنشاء سجل المريض مع البيانات الصحية
+            var patient = new Patient
+            {
+                AppUserId = user.Id,
+                MedicalRecordNumber = $"PAT-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
+                PhoneNumber = model.PhoneNumber,
+                Gender = model.Gender,
+                DateOfBirth = model.DateOfBirth,
+                HeightCm = model.HeightCm,
+                WeightKg = model.WeightKg,
+                BloodType = model.BloodType,
+                Allergies = model.Allergies,
+                ChronicDiseases = model.ChronicDiseases,
+                CurrentMedications = model.CurrentMedications,
+                Surgeries = model.Surgeries,
+                MedicalNotes = model.MedicalNotes,
+                EmergencyContactName = model.EmergencyContactName,
+                EmergencyContactPhone = model.EmergencyContactPhone,
+                LastMedicalUpdate = DateTime.UtcNow
+            };
+
+            _context.Patients.Add(patient);
+            await _context.SaveChangesAsync();
+
+            // إرسال بريد ترحيبي
+            await _emailService.SendWelcomeEmailAsync(user.Email!, user.FullName);
+
+            //  Audit Log
+            await _auditService.LogAsync(
+                user.Id, user.Email!, AuditActionTypes.Register,
+                entityType: "Patient",
+                entityId: Guid.TryParse(patient.Id.ToString(), out var guid) ? guid : (Guid?)null,
+                description: "New patient registered with medical profile",
+                newData: new { patient.MedicalRecordNumber, patient.BloodType, patient.Allergies },
+                success: true
+            );
+
+            return Ok(new 
+            { 
+                Message = "تم تسجيل المريض بنجاح",
+                PatientId = patient.Id,
+                MedicalRecordNumber = patient.MedicalRecordNumber
+            });
+        }
+
         //  تسجيل دخول عام (لأي مستخدم)
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
-            var user = await _userManager.FindByEmailAsync(model.Email);
-            if (user == null) return Unauthorized("المستخدم غير موجود");
-
-            var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
-            if (!result.Succeeded)
-                return Unauthorized("كلمة المرور غير صحيحة");
-
-            // تأكيد أن المستخدم معتمد (لو صيدلية أو شركة)
-            var pharmacy = await _context.Pharmacies.FirstOrDefaultAsync(p => p.AppUserId == user.Id);
-            var company = await _context.Companies.FirstOrDefaultAsync(c => c.AppUserId == user.Id);
-
-            if ((pharmacy != null && !pharmacy.IsApproved) ||
-                (company != null && !company.IsApproved))
+            var userId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value ?? "anonymous";
+            
+            // Rate Limiting: منع الهجمات
+            if (!_rateLimitService.IsAllowed(userId, "login", RateLimitPresets.LoginAttempts, RateLimitPresets.LoginWindowSeconds))
             {
-                return Unauthorized("الحساب لم تتم الموافقة عليه بعد من الأدمن 🚫");
+                await _auditService.LogAsync(
+                    userId, model.Email, AuditActionTypes.Login,
+                    description: "Login attempt blocked due to rate limiting",
+                    success: false,
+                    errorMessage: "Rate limit exceeded"
+                );
+                
+                return StatusCode(429, new { message = "محاولات كثيرة جداً. يرجى المحاولة بعد قليل" });
             }
 
-            var token = await GenerateJwtToken(user);
-            return Ok(new { Token = token });
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user == null)
+                {
+                    await _auditService.LogAsync(
+                        userId, model.Email, AuditActionTypes.Login,
+                        description: $"Login failed - user not found: {model.Email}",
+                        success: false,
+                        errorMessage: "User not found"
+                    );
+                    return Unauthorized("المستخدم غير موجود");
+                }
+
+                var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
+                if (!result.Succeeded)
+                {
+                    await _auditService.LogAsync(
+                        user.Id, user.Email!, AuditActionTypes.Login,
+                        description: "Login failed - invalid password",
+                        success: false,
+                        errorMessage: "Invalid password"
+                    );
+                    return Unauthorized("كلمة المرور غير صحيحة");
+                }
+
+                // تأكيد أن المستخدم معتمد (لو صيدلية أو شركة)
+                var pharmacy = await _context.Pharmacies.FirstOrDefaultAsync(p => p.AppUserId == user.Id);
+                var company = await _context.Companies.FirstOrDefaultAsync(c => c.AppUserId == user.Id);
+
+                if ((pharmacy != null && !pharmacy.IsApproved) ||
+                    (company != null && !company.IsApproved))
+                {
+                    await _auditService.LogAsync(
+                        user.Id, user.Email!, AuditActionTypes.Login,
+                        description: "Login blocked - account not approved",
+                        success: false,
+                        errorMessage: "Account not approved"
+                    );
+                    return Unauthorized("الحساب لم تتم الموافقة عليه بعد من الأدمن 🚫");
+                }
+
+                var token = await GenerateJwtToken(user);
+                
+                // Audit Log: نجاح تسجيل الدخول
+                await _auditService.LogAsync(
+                    user.Id, user.Email!, AuditActionTypes.Login,
+                    description: "Login successful",
+                    success: true
+                );
+                
+                return Ok(new { Token = token });
+            }
+            catch (Exception ex)
+            {
+                await _auditService.LogAsync(
+                    userId, model.Email, AuditActionTypes.Login,
+                    description: "Login error",
+                    success: false,
+                    errorMessage: ex.Message
+                );
+                
+                return StatusCode(500, new { message = "حدث خطأ غير متوقع" });
+            }
         }
 
         //  إنشاء JWT Token

@@ -18,6 +18,12 @@ namespace MyHealthcareApi.Data
         public DbSet<PharmacyResponse> PharmacyResponses { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<Rating> Ratings { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<Appointment> Appointments { get; set; }
+        public DbSet<DoctorAvailability> DoctorAvailabilities { get; set; }
+        public DbSet<PharmacyInventory> PharmacyInventories { get; set; }
+        public DbSet<DrugExchange> DrugExchanges { get; set; }
+        public DbSet<PharmacyOrder> PharmacyOrders { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -65,6 +71,13 @@ namespace MyHealthcareApi.Data
                 .HasForeignKey(p => p.PatientId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Prescription -> Doctor (الطبيب اللي كتب الروشتة)
+            builder.Entity<Prescription>()
+                .HasOne(p => p.Doctor)
+                .WithMany()
+                .HasForeignKey(p => p.DoctorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // PharmacyResponse -> Prescription
             builder.Entity<PharmacyResponse>()
                 .HasOne(pr => pr.Prescription)
@@ -88,6 +101,133 @@ namespace MyHealthcareApi.Data
             builder.Entity<Rating>()
                 .HasIndex(r => new { r.UserId, r.EntityType, r.EntityId })
                 .IsUnique();
+
+            // Index للبحث السريع في سجلات التدقيق
+            builder.Entity<AuditLog>()
+                .HasIndex(a => a.UserId);
+            
+            builder.Entity<AuditLog>()
+                .HasIndex(a => new { a.EntityType, a.EntityId });
+            
+            builder.Entity<AuditLog>()
+                .HasIndex(a => a.CreatedAt);
+
+            // Appointment -> Patient
+            builder.Entity<Appointment>()
+                .HasOne(a => a.Patient)
+                .WithMany()
+                .HasForeignKey(a => a.PatientId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Appointment -> Doctor (optional)
+            builder.Entity<Appointment>()
+                .HasOne(a => a.Doctor)
+                .WithMany()
+                .HasForeignKey(a => a.DoctorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes for Appointments
+            builder.Entity<Appointment>()
+                .HasIndex(a => a.PatientId);
+            
+            builder.Entity<Appointment>()
+                .HasIndex(a => a.DoctorId);
+            
+            builder.Entity<Appointment>()
+                .HasIndex(a => new { a.PatientId, a.Status });
+            
+            builder.Entity<Appointment>()
+                .HasIndex(a => a.AppointmentDate);
+
+            // DoctorAvailability -> Doctor
+            builder.Entity<DoctorAvailability>()
+                .HasOne(da => da.Doctor)
+                .WithMany()
+                .HasForeignKey(da => da.DoctorId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // DoctorAvailability -> Patient (optional)
+            builder.Entity<DoctorAvailability>()
+                .HasOne(da => da.BookedByPatient)
+                .WithMany()
+                .HasForeignKey(da => da.BookedByPatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes for DoctorAvailability
+            builder.Entity<DoctorAvailability>()
+                .HasIndex(da => da.DoctorId);
+            
+            builder.Entity<DoctorAvailability>()
+                .HasIndex(da => da.Date);
+            
+            builder.Entity<DoctorAvailability>()
+                .HasIndex(da => new { da.DoctorId, da.Date, da.IsAvailable });
+
+            // PharmacyInventory -> Pharmacy
+            builder.Entity<PharmacyInventory>()
+                .HasOne(pi => pi.Pharmacy)
+                .WithMany()
+                .HasForeignKey(pi => pi.PharmacyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Indexes for PharmacyInventory
+            builder.Entity<PharmacyInventory>()
+                .HasIndex(pi => pi.PharmacyId);
+            
+            builder.Entity<PharmacyInventory>()
+                .HasIndex(pi => pi.MedicineName);
+            
+            builder.Entity<PharmacyInventory>()
+                .HasIndex(pi => pi.ExpiryDate);
+
+            // DrugExchange relationships
+            builder.Entity<DrugExchange>()
+                .HasOne(de => de.FromPharmacy)
+                .WithMany()
+                .HasForeignKey(de => de.FromPharmacyId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<DrugExchange>()
+                .HasOne(de => de.ToPharmacy)
+                .WithMany()
+                .HasForeignKey(de => de.ToPharmacyId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes for DrugExchange
+            builder.Entity<DrugExchange>()
+                .HasIndex(de => de.FromPharmacyId);
+            
+            builder.Entity<DrugExchange>()
+                .HasIndex(de => de.ToPharmacyId);
+            
+            builder.Entity<DrugExchange>()
+                .HasIndex(de => de.Status);
+
+            // PharmacyOrder relationships
+            builder.Entity<PharmacyOrder>()
+                .HasOne(po => po.Pharmacy)
+                .WithMany()
+                .HasForeignKey(po => po.PharmacyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<PharmacyOrder>()
+                .HasOne(po => po.Company)
+                .WithMany()
+                .HasForeignKey(po => po.CompanyId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes for PharmacyOrder
+            builder.Entity<PharmacyOrder>()
+                .HasIndex(po => po.PharmacyId);
+            
+            builder.Entity<PharmacyOrder>()
+                .HasIndex(po => po.CompanyId);
+            
+            builder.Entity<PharmacyOrder>()
+                .HasIndex(po => po.Status);
+            
+            builder.Entity<PharmacyOrder>()
+                .HasIndex(po => po.MedicineName);
         }
     }
 }

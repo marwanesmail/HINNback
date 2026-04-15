@@ -1,14 +1,10 @@
 namespace MyHealthcareApi.Services
 {
-    /// <summary>
     /// خدمة البحث الذكي (Fuzzy Search) باستخدام Levenshtein Distance
-    /// </summary>
     public class FuzzySearchService
     {
-        /// <summary>
-        /// حساب المسافة بين نصين (Levenshtein Distance)
-        /// </summary>
-        public int CalculateLevenshteinDistance(string source, string target)
+            /// حساب المسافة بين نصين (Levenshtein Distance)
+            public int CalculateLevenshteinDistance(string source, string target)
         {
             if (string.IsNullOrEmpty(source))
                 return string.IsNullOrEmpty(target) ? 0 : target.Length;
@@ -39,10 +35,8 @@ namespace MyHealthcareApi.Services
             return distance[sourceLength, targetLength];
         }
 
-        /// <summary>
-        /// حساب نسبة التشابه بين نصين (0-100%)
-        /// </summary>
-        /// <param name="source">النص الأول</param>
+            /// حساب نسبة التشابه بين نصين (0-100%)
+            /// <param name="source">النص الأول</param>
         /// <param name="target">النص الثاني</param>
         /// <returns>نسبة التشابه من 0 إلى 100</returns>
         public double CalculateSimilarity(string source, string target)
@@ -57,10 +51,8 @@ namespace MyHealthcareApi.Services
             return (1.0 - (double)distance / maxLength) * 100;
         }
 
-        /// <summary>
-        /// فحص هل النصان متشابهان بنسبة معينة
-        /// </summary>
-        public bool IsSimilar(string source, string target, double minSimilarityPercentage = 60)
+            /// فحص هل النصان متشابهان بنسبة معينة
+            public bool IsSimilar(string source, string target, double minSimilarityPercentage = 60)
         {
             return CalculateSimilarity(source, target) >= minSimilarityPercentage;
         }

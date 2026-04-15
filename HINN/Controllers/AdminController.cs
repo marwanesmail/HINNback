@@ -57,7 +57,7 @@ namespace MyHealthcareApi.Controllers
             _context.Pharmacies.Remove(pharmacy);
             await _context.SaveChangesAsync();
 
-            return Ok(new { Message = "تم حذف الصيدلية ❌" });
+            return Ok(new { Message = "تم حذف الصيدلية" });
         }
 
         // عرض الأطباء اللي محتاجين مراجعة
@@ -116,7 +116,7 @@ namespace MyHealthcareApi.Controllers
             _context.Companies.Remove(company);
             await _context.SaveChangesAsync();
 
-            return Ok(new { Message = "تم رفض / حذف شركة الأدوية ❌" });
+            return Ok(new { Message = "تم رفض / حذف شركة الأدوية " });
         }
 
         //  عرض جميع المستخدمين في النظام مع أدوارهم

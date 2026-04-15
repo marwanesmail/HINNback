@@ -53,6 +53,7 @@ namespace MyHealthcareApi.Controllers
             //  رفع صور المستندات
             string licensePath = dto.LicenseImage != null ? await SaveFile(dto.LicenseImage) : string.Empty;
             string taxPath = dto.TaxDocument != null ? await SaveFile(dto.TaxDocument) : string.Empty;
+            string commercialRecordPath = dto.CommercialRecordImage != null ? await SaveFile(dto.CommercialRecordImage) : string.Empty;
 
             //  إنشاء كيان الصيدلية في قاعدة البيانات
             var pharmacy = new Pharmacy
@@ -62,8 +63,13 @@ namespace MyHealthcareApi.Controllers
                 Address = dto.Address,
                 Latitude = dto.Latitude,
                 Longitude = dto.Longitude,
+                PhoneNumber = dto.PhoneNumber,
+                Phone2 = dto.Phone2,
+                WorkingHours = dto.WorkingHours,
+                DeliveryArea = dto.DeliveryArea,
                 LicenseImagePath = licensePath,
                 TaxDocumentPath = taxPath,
+                CommercialRecordPath = commercialRecordPath,
                 IsApproved = false // في انتظار موافقة الأدمن
             };
 
@@ -173,7 +179,50 @@ namespace MyHealthcareApi.Controllers
 
             await _context.SaveChangesAsync();
 
-            //  إشعار للمريض
+            // ═══════════════════════════════════════════════════════
+            // إضافة نقاط للمريض عند القبول
+            // ═══════════════════════════════════════════════════════
+            
+            if (dto.IsAvailable && dto.Price.HasValue)
+            {
+                var patient = await _context.Users.FindAsync(prescription.PatientId);
+                if (patient != null)
+                {
+                    // كل 100 جنيه = 1 نقطة
+                    var pointsEarned = (int)(dto.Price.Value / 100);
+                    patient.LoyaltyPoints += pointsEarned;
+                    patient.TotalPurchases += dto.Price.Value;
+                    
+                    // تحديث الخصم (كل نقطة = 1%، حد أقصى 20%)
+                    patient.DiscountPercentage = Math.Min(patient.LoyaltyPoints, 20);
+                    
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            //  إشعار للمريض بالرد
+            
+            var notificationMessage = dto.IsAvailable 
+                ? $" صيدلية {pharmacy.PharmacyName} عندها الدواء - السعر: {dto.Price} جنيه"
+                : $" صيدلية {pharmacy.PharmacyName} مش عندها الدواء";
+
+            // إشعار مباشر للمريض
+            await _hubContext.Clients
+                .User(prescription.PatientId)
+                .SendAsync("ReceiveNotification", new
+                {
+                    message = notificationMessage,
+                    type = dto.IsAvailable ? "pharmacy_accepted" : "pharmacy_rejected",
+                    prescriptionId = prescription.Id,
+                    pharmacyId = pharmacy.Id,
+                    pharmacyName = pharmacy.PharmacyName,
+                    price = dto.Price,
+                    isAvailable = dto.IsAvailable,
+                    responseId = response.Id,
+                    timestamp = DateTime.UtcNow
+                });
+
+            // إشعار عبر Group (احتياطي)
             await _hubContext.Clients
                 .Group(NotificationsHub.GetUserGroup(prescription.PatientId))
                 .SendAsync("PharmacyResponseReceived", new

@@ -28,6 +28,27 @@ namespace MyHealthcareApi.Models
         //  صورة الورق الضريبي
         public string? TaxDocumentPath { get; set; }
 
+        // بيانات إضافية للصيدلية
+
+        /// رقم الهاتف الأساسي
+        [Phone]
+        public string? PhoneNumber { get; set; }
+
+        /// رقم هاتف ثاني (اختياري)
+        [Phone]
+        public string? Phone2 { get; set; }
+
+        /// مواعيد العمل (مثال: "9 ص - 11 م")
+        [MaxLength(200)]
+        public string? WorkingHours { get; set; }
+
+        /// منطقة التوصيل (مثال: "الدقي، العجوزة، المهندسين")
+        [MaxLength(500)]
+        public string? DeliveryArea { get; set; }
+
+        /// صورة السجل التجاري
+        public string? CommercialRecordPath { get; set; }
+
         //  حالة الموافقة من الأدمن
         public bool IsApproved { get; set; } = false;
 
