@@ -116,7 +116,8 @@ namespace MyHealthcareApi.Controllers
                 {
                     UserName = model.Email,
                     Email = model.Email,
-                    FullName = model.FullName
+                    FullName = model.FullName,
+                    UserType = Models.Enums.UserType.Doctor
                 };
 
                 var result = await _userManager.CreateAsync(user, model.Password);

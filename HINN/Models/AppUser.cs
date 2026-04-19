@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 
 namespace MyHealthcareApi.Models
 {
@@ -13,6 +13,7 @@ namespace MyHealthcareApi.Models
         public double Longitude { get; set; }
         public bool IsApproved { get; set; } = false;
         public string? ProfileImageUrl { get; set; }
+        public Enums.UserType UserType { get; set; }
 
         // ═══════════════════════════════════════════════════════════
         // حقول الشهرة (للترتيب في البحث)

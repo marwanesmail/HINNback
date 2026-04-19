@@ -105,6 +105,21 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     // db.Database.Migrate();
+
+    if (args.Contains("--sync-db"))
+    {
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        if (connectionString != null)
+        {
+            // Only actually modify the DB if --execute is also passed
+            bool executeChanges = args.Contains("--execute");
+            await MyHealthcareApi.Setup.SyncDatabaseSchemaAsync(connectionString, executeChanges);
+        }
+        
+        Console.WriteLine("Exiting setup mode...");
+        return; // Stops the API from booting up
+    }
+
     app.MapGet("/", () => "API is running");
 
 
@@ -119,7 +134,7 @@ using (var scope = app.Services.CreateScope())
     string adminEmail = "admin@hinn.com";
     if (await userManager.FindByEmailAsync(adminEmail) == null)
     {
-        var adminUser = new AppUser { UserName = adminEmail, Email = adminEmail, FullName = "System Admin" };
+        var adminUser = new AppUser { UserName = adminEmail, Email = adminEmail, FullName = "System Admin", UserType = MyHealthcareApi.Models.Enums.UserType.Admin };
         var result = await userManager.CreateAsync(adminUser, "Admin@123");
         if (result.Succeeded)
         {
