@@ -59,15 +59,13 @@ namespace MyHealthcareApi.Controllers
                 var user = new AppUser
                 {
                     UserName = model.Email,
-                    Email = model.Email
+                    Email = model.Email,
+                    UserType = Models.Enums.UserType.Pharmacy
                 };
 
                 var result = await _userManager.CreateAsync(user, model.Password);
                 if (!result.Succeeded)
                     return BadRequest(result.Errors);
-
-                //  إضافة الدور المناسب
-                await _userManager.AddToRoleAsync(user, "Pharmacy");
 
                 var pharmacy = new Pharmacy
                 {
@@ -124,9 +122,6 @@ namespace MyHealthcareApi.Controllers
                 if (!result.Succeeded)
                     return BadRequest(result.Errors);
 
-                //  إضافة الدور المناسب
-                await _userManager.AddToRoleAsync(user, "Doctor");
-
                 var doctor = new Doctor
                 {
                     AppUserId = user.Id,
@@ -157,15 +152,13 @@ namespace MyHealthcareApi.Controllers
                 var user = new AppUser
                 {
                     UserName = model.Email,
-                    Email = model.Email
+                    Email = model.Email,
+                    UserType = Models.Enums.UserType.Company
                 };
 
                 var result = await _userManager.CreateAsync(user, model.Password);
                 if (!result.Succeeded)
                     return BadRequest(result.Errors);
-
-                //  إضافة الدور المناسب
-                await _userManager.AddToRoleAsync(user, "Company");
 
                 var company = new Company
                 {
@@ -204,15 +197,13 @@ namespace MyHealthcareApi.Controllers
                     UserName = model.Email,
                     Email = model.Email,
                     FullName = model.FullName,
-                    PhoneNumber = model.PhoneNumber
+                    PhoneNumber = model.PhoneNumber,
+                    UserType = Models.Enums.UserType.Patient
                 };
 
                 var result = await _userManager.CreateAsync(user, model.Password);
                 if (!result.Succeeded)
                     return BadRequest(result.Errors);
-
-                //  إضافة الدور المناسب
-                await _userManager.AddToRoleAsync(user, "Patient");
 
                 //  إنشاء سجل المريض مع البيانات الصحية
                 var patient = new Patient
@@ -354,20 +345,14 @@ namespace MyHealthcareApi.Controllers
         //  إنشاء JWT Token
         private async Task<string> GenerateJwtToken(AppUser user)
         {
-            var userRoles = await _userManager.GetRolesAsync(user);
-
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
-                new Claim(ClaimTypes.NameIdentifier, user.Id)
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                // Assign the Role claim purely from the UserType column
+                new Claim(ClaimTypes.Role, user.UserType.ToString())
             };
-
-            //  إضافة الـ Roles للـ Token
-            foreach (var role in userRoles)
-            {
-                claims.Add(new Claim(ClaimTypes.Role, role));
-            }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

@@ -12,7 +12,7 @@ namespace MyHealthcareApi
         // 1. The Schema Array (Dictionary of TableName -> List of Columns)
         public static readonly Dictionary<string, List<string>> RequiredSchema = new()
         {
-            { "Doctors", new List<string> { "Id", "AppUserId", "Rating", "RatingCount", "IsApproved", "LicenseImageUrl", "Specialty", "ViewCount" } },
+            { "Doctors", new List<string> { "Id", "AppUserId", "Rating", "RatingCount", "IsApproved", "LicenseImageUrl", "Specialty", "ViewCount", "Bio", "ExperienceYears", "ProfileImagePath", "ClinicName", "ClinicAddress", "ClinicPhone", "Latitude", "Longitude", "ConsultationFee", "ConsultationType", "SessionDurationMinutes" } },
             { "Patients", new List<string> { "Id", "AppUserId", "PhoneNumber", "Gender", "DateOfBirth", "HeightCm", "WeightKg", "BloodType", "Allergies", "ChronicDiseases", "CurrentMedications", "Surgeries", "MedicalNotes", "EmergencyContactName", "EmergencyContactPhone", "LastMedicalUpdate", "MedicalRecordNumber" } },
             { "Pharmacies", new List<string> { "Id", "PharmacyName", "Address", "Latitude", "Longitude", "LicenseImagePath", "TaxDocumentPath", "PhoneNumber", "Phone2", "WorkingHours", "DeliveryArea", "CommercialRecordPath", "IsApproved", "AppUserId", "ViewCount", "Rating", "RatingCount" } },
             { "Companies", new List<string> { "Id", "CompanyName", "AppUserId", "ViewCount", "IsApproved", "LicenseDocumentPath", "LicenseNumber", "Rating", "RatingCount" } },

@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using MyHealthcareApi.Data;
+using MyHealthcareApi.Hubs;
 using MyHealthcareApi.Models;
 using MyHealthcareApi.DTOs;
 using System.ComponentModel.DataAnnotations;
@@ -13,17 +15,23 @@ namespace MyHealthcareApi.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize(Roles = "Doctor")] // الطبيب بس
-    public class DoctorController : ControllerBase
+    public partial class DoctorController : ControllerBase
     {
         private readonly AppDbContext _context;
         private readonly UserManager<AppUser> _userManager;
+        private readonly IWebHostEnvironment _env;
+        private readonly IHubContext<NotificationsHub> _hubContext;
 
         public DoctorController(
             AppDbContext context,
-            UserManager<AppUser> userManager)
+            UserManager<AppUser> userManager,
+            IWebHostEnvironment env,
+            IHubContext<NotificationsHub> hubContext)
         {
             _context = context;
             _userManager = userManager;
+            _env = env;
+            _hubContext = hubContext;
         }
 
         //  إدارة الروشتات
@@ -565,3 +573,507 @@ namespace MyHealthcareApi.Controllers
     }
 }
 
+// ═══════════════════════════════════════════════════════
+// NEW ENDPOINTS — added below existing code
+// ═══════════════════════════════════════════════════════
+
+namespace MyHealthcareApi.Controllers
+{
+    public partial class DoctorController
+    {
+        // ── A: Profile ──────────────────────────────────────────
+
+        /// <summary>
+        /// Returns the full doctor profile matching DoctorProfilePage and DoctorSettingsSection fields.
+        /// </summary>
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            var doctor = await _context.Doctors
+                .Include(d => d.AppUser)
+                .FirstOrDefaultAsync(d => d.AppUserId == userId);
+
+            if (doctor == null) return NotFound("الطبيب غير موجود");
+
+            return Ok(new DoctorProfileResponseDto
+            {
+                Id = userId,
+                FullName = doctor.AppUser.FullName ?? string.Empty,
+                Email = doctor.AppUser.Email ?? string.Empty,
+                Phone = doctor.AppUser.PhoneNumber,
+                Specialization = doctor.Specialty,
+                LicenseNumber = doctor.LicenseImageUrl,
+                ProfileImagePath = doctor.ProfileImagePath,
+                Bio = doctor.Bio,
+                YearsOfExperience = doctor.ExperienceYears,
+                ClinicName = doctor.ClinicName,
+                Address = doctor.ClinicAddress,
+                ClinicPhone = doctor.ClinicPhone,
+                ConsultationFee = doctor.ConsultationFee,
+                ConsultationType = doctor.ConsultationType,
+                SessionDuration = doctor.SessionDurationMinutes,
+                Latitude = doctor.Latitude,
+                Longitude = doctor.Longitude,
+                Rating = doctor.Rating,
+                RatingCount = doctor.RatingCount,
+                IsApproved = doctor.IsApproved
+            });
+        }
+
+        /// <summary>
+        /// Updates doctor profile fields from DoctorSettingsSection (personal + clinic tabs).
+        /// </summary>
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateDoctorProfileDto dto)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            var doctor = await _context.Doctors
+                .Include(d => d.AppUser)
+                .FirstOrDefaultAsync(d => d.AppUserId == userId);
+
+            if (doctor == null) return NotFound("الطبيب غير موجود");
+
+            // Update AppUser name/phone
+            if (!string.IsNullOrEmpty(dto.FullName))
+                doctor.AppUser.FullName = dto.FullName;
+            if (!string.IsNullOrEmpty(dto.Phone))
+                doctor.AppUser.PhoneNumber = dto.Phone;
+
+            // Update Doctor profile fields
+            if (!string.IsNullOrEmpty(dto.Specialization)) doctor.Specialty = dto.Specialization;
+            if (!string.IsNullOrEmpty(dto.Bio)) doctor.Bio = dto.Bio;
+            if (dto.YearsOfExperience > 0) doctor.ExperienceYears = dto.YearsOfExperience;
+            if (!string.IsNullOrEmpty(dto.ClinicName)) doctor.ClinicName = dto.ClinicName;
+            if (!string.IsNullOrEmpty(dto.Address)) doctor.ClinicAddress = dto.Address;
+            if (!string.IsNullOrEmpty(dto.ClinicPhone)) doctor.ClinicPhone = dto.ClinicPhone;
+            if (dto.ConsultationFee > 0) doctor.ConsultationFee = dto.ConsultationFee;
+            if (!string.IsNullOrEmpty(dto.ConsultationType)) doctor.ConsultationType = dto.ConsultationType;
+            if (dto.SessionDuration > 0) doctor.SessionDurationMinutes = dto.SessionDuration;
+            if (dto.Latitude != 0) doctor.Latitude = dto.Latitude;
+            if (dto.Longitude != 0) doctor.Longitude = dto.Longitude;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { Message = "تم تحديث الملف الشخصي بنجاح" });
+        }
+
+        /// <summary>
+        /// Uploads and stores a doctor profile image to wwwroot/doctors/.
+        /// </summary>
+        [HttpPost("profile/image")]
+        public async Task<IActionResult> UploadProfileImage(IFormFile file)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            if (file == null || file.Length == 0)
+                return BadRequest("لم يتم رفع أي ملف");
+
+            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.AppUserId == userId);
+            if (doctor == null) return NotFound("الطبيب غير موجود");
+
+            var folderPath = Path.Combine(_env.WebRootPath ?? "wwwroot", "doctors");
+            if (!Directory.Exists(folderPath))
+                Directory.CreateDirectory(folderPath);
+
+            var fileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
+            var filePath = Path.Combine(folderPath, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+                await file.CopyToAsync(stream);
+
+            doctor.ProfileImagePath = $"/doctors/{fileName}";
+            await _context.SaveChangesAsync();
+
+            return Ok(new { ImagePath = doctor.ProfileImagePath });
+        }
+
+        // ── B: Dashboard Stats ───────────────────────────────────
+
+        /// <summary>
+        /// Returns aggregated stats for the doctor dashboard matching DashboardSection.jsx fields.
+        /// </summary>
+        [HttpGet("dashboard/stats")]
+        public async Task<IActionResult> GetDashboardStats()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.AppUserId == userId);
+            if (doctor == null) return NotFound("الطبيب غير موجود");
+
+            var today = DateTime.Today;
+            var tomorrow = today.AddDays(1);
+
+            var totalPatients = await _context.Appointments
+                .Where(a => a.DoctorId == userId)
+                .Select(a => a.PatientId)
+                .Distinct()
+                .CountAsync();
+
+            var todayAppointments = await _context.Appointments
+                .CountAsync(a => a.DoctorId == userId && a.AppointmentDate.Date == today);
+
+            var tomorrowAppointments = await _context.Appointments
+                .CountAsync(a => a.DoctorId == userId && a.AppointmentDate.Date == tomorrow);
+
+            var completedAppointments = await _context.Appointments
+                .CountAsync(a => a.DoctorId == userId && a.Status == AppointmentStatus.Completed);
+
+            var pendingAppointments = await _context.Appointments
+                .CountAsync(a => a.DoctorId == userId && a.Status == AppointmentStatus.Pending);
+
+            var newPrescriptions = await _context.Prescriptions
+                .CountAsync(p => p.DoctorId == userId && p.Status == PrescriptionStatus.Pending);
+
+            // Last 5 prescriptions for the dashboard feed
+            var recentPrescriptions = await _context.Prescriptions
+                .Where(p => p.DoctorId == userId)
+                .OrderByDescending(p => p.CreatedAt)
+                .Take(5)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.Title,
+                    PatientName = p.PatientName,
+                    Status = p.Status.ToString(),
+                    p.CreatedAt
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                TotalPatients = totalPatients,
+                TodayAppointments = todayAppointments,
+                TomorrowAppointments = tomorrowAppointments,
+                CompletedAppointments = completedAppointments,
+                PendingAppointments = pendingAppointments,
+                NewPrescriptions = newPrescriptions,
+                AverageRating = doctor.Rating,
+                RecentPrescriptions = recentPrescriptions
+            });
+        }
+
+        // ── C: Appointment Lifecycle ─────────────────────────────
+
+        /// <summary>
+        /// Returns a single appointment with isNewPatient flag.
+        /// </summary>
+        [HttpGet("appointments/{id}")]
+        public async Task<IActionResult> GetAppointmentDetail(int id)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            var appt = await _context.Appointments
+                .Include(a => a.Patient)
+                .FirstOrDefaultAsync(a => a.Id == id && a.DoctorId == userId);
+
+            if (appt == null) return NotFound("الموعد غير موجود");
+
+            // isNewPatient = first appointment this patient has with any doctor
+            var isNew = await _context.Appointments
+                .CountAsync(a => a.PatientId == appt.PatientId) == 1;
+
+            var patient = await _context.Users.FindAsync(appt.PatientId);
+            var patientProfile = await _context.Patients.FirstOrDefaultAsync(p => p.AppUserId == appt.PatientId);
+
+            int age = 0;
+            if (patientProfile?.DateOfBirth != null)
+                age = DateTime.Today.Year - patientProfile.DateOfBirth.Value.Year;
+
+            return Ok(new DoctorAppointmentDetailDto
+            {
+                Id = appt.Id,
+                PatientName = patient?.FullName ?? "غير معروف",
+                PatientPhone = patient?.PhoneNumber,
+                PatientEmail = patient?.Email,
+                PatientAge = age,
+                Date = appt.AppointmentDate.ToString("yyyy-MM-dd"),
+                Time = appt.AppointmentTime.ToString(@"hh\:mm"),
+                Duration = appt.AppointmentDate == default ? 30 : 30,
+                Reason = appt.PatientNotes,
+                Status = MapStatus(appt.Status),
+                Notes = appt.DoctorNotes,
+                Diagnosis = appt.Diagnosis,
+                IsNewPatient = isNew,
+                AppointmentType = appt.AppointmentType
+            });
+        }
+
+        /// <summary>
+        /// Confirms a pending appointment (status → "confirmed").
+        /// </summary>
+        [HttpPut("appointments/{id}/confirm")]
+        public async Task<IActionResult> ConfirmAppointment(int id)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            var appt = await _context.Appointments
+                .FirstOrDefaultAsync(a => a.Id == id && a.DoctorId == userId);
+
+            if (appt == null) return NotFound("الموعد غير موجود");
+            if (appt.Status != AppointmentStatus.Pending)
+                return BadRequest("يمكن تأكيد المواعيد المعلقة فقط");
+
+            appt.Status = AppointmentStatus.Upcoming;
+            await _context.SaveChangesAsync();
+
+            // Notify patient in real-time
+            await _hubContext.Clients.User(appt.PatientId)
+                .SendAsync("AppointmentConfirmed", new { AppointmentId = id });
+
+            return Ok(new { Message = "تم تأكيد الموعد بنجاح", Status = "confirmed" });
+        }
+
+        /// <summary>
+        /// Marks an appointment as completed with optional diagnosis and notes.
+        /// </summary>
+        [HttpPut("appointments/{id}/complete")]
+        public async Task<IActionResult> CompleteAppointment(int id, [FromBody] CompleteAppointmentDto dto)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            var appt = await _context.Appointments
+                .FirstOrDefaultAsync(a => a.Id == id && a.DoctorId == userId);
+
+            if (appt == null) return NotFound("الموعد غير موجود");
+
+            appt.Status = AppointmentStatus.Completed;
+            appt.CompletedAt = DateTime.UtcNow;
+            if (!string.IsNullOrEmpty(dto.Diagnosis)) appt.Diagnosis = dto.Diagnosis;
+            if (!string.IsNullOrEmpty(dto.DoctorNotes)) appt.DoctorNotes = dto.DoctorNotes;
+
+            await _context.SaveChangesAsync();
+
+            await _hubContext.Clients.User(appt.PatientId)
+                .SendAsync("AppointmentCompleted", new { AppointmentId = id });
+
+            return Ok(new { Message = "تم تسجيل الموعد كمكتمل", Status = "completed" });
+        }
+
+        /// <summary>
+        /// Cancels an appointment with an optional reason.
+        /// </summary>
+        [HttpPut("appointments/{id}/cancel")]
+        public async Task<IActionResult> CancelAppointment(int id, [FromBody] CancelAppointmentDto dto)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            var appt = await _context.Appointments
+                .FirstOrDefaultAsync(a => a.Id == id && a.DoctorId == userId);
+
+            if (appt == null) return NotFound("الموعد غير موجود");
+            if (appt.Status == AppointmentStatus.Completed)
+                return BadRequest("لا يمكن إلغاء موعد مكتمل");
+
+            appt.Status = AppointmentStatus.Cancelled;
+            appt.CancellationReason = dto.CancellationReason;
+            appt.CancelledAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            await _hubContext.Clients.User(appt.PatientId)
+                .SendAsync("AppointmentCancelled", new { AppointmentId = id, Reason = dto.CancellationReason });
+
+            return Ok(new { Message = "تم إلغاء الموعد", Status = "cancelled" });
+        }
+
+        /// <summary>
+        /// Marks a patient as a no-show for their appointment.
+        /// </summary>
+        [HttpPut("appointments/{id}/no-show")]
+        public async Task<IActionResult> MarkNoShow(int id)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            var appt = await _context.Appointments
+                .FirstOrDefaultAsync(a => a.Id == id && a.DoctorId == userId);
+
+            if (appt == null) return NotFound("الموعد غير موجود");
+
+            appt.Status = AppointmentStatus.Cancelled;
+            appt.CancellationReason = "المريض لم يحضر";
+            appt.CancelledAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { Message = "تم تسجيل غياب المريض" });
+        }
+
+        // ── D: Availability CRUD ─────────────────────────────────
+
+        /// <summary>
+        /// Deletes an availability slot only if it has not been booked.
+        /// </summary>
+        [HttpDelete("availability/{id}")]
+        public async Task<IActionResult> DeleteAvailabilitySlot(int id)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.AppUserId == userId);
+            if (doctor == null) return NotFound("الطبيب غير موجود");
+
+            var slot = await _context.DoctorAvailabilities
+                .FirstOrDefaultAsync(s => s.Id == id && s.DoctorId == userId);
+
+            if (slot == null) return NotFound("الموعد غير موجود");
+
+            // Prevent deleting a booked slot
+            if (!slot.IsAvailable)
+                return BadRequest("لا يمكن حذف موعد محجوز");
+
+            _context.DoctorAvailabilities.Remove(slot);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { Message = "تم حذف الموعد بنجاح" });
+        }
+
+        /// <summary>
+        /// Toggles the IsAvailable flag on an availability slot.
+        /// </summary>
+        [HttpPut("availability/{id}/toggle")]
+        public async Task<IActionResult> ToggleAvailabilitySlot(int id)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.AppUserId == userId);
+            if (doctor == null) return NotFound("الطبيب غير موجود");
+
+            var slot = await _context.DoctorAvailabilities
+                .FirstOrDefaultAsync(s => s.Id == id && s.DoctorId == userId);
+
+            if (slot == null) return NotFound("الموعد غير موجود");
+
+            slot.IsAvailable = !slot.IsAvailable;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { Message = "تم تحديث حالة الموعد", IsAvailable = slot.IsAvailable });
+        }
+
+        // ── E: My Patients ───────────────────────────────────────
+
+        /// <summary>
+        /// Returns all unique patients who had appointments with this doctor.
+        /// </summary>
+        [HttpGet("patients")]
+        public async Task<IActionResult> GetMyPatients()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            var patients = await _context.Appointments
+                .Where(a => a.DoctorId == userId)
+                .GroupBy(a => a.PatientId)
+                .Select(g => new
+                {
+                    PatientId = g.Key,
+                    TotalAppointments = g.Count(),
+                    LastVisitDate = g.Max(a => a.AppointmentDate).ToString("yyyy-MM-dd"),
+                    LastVisitStatus = g.OrderByDescending(a => a.AppointmentDate)
+                                       .Select(a => a.Status.ToString())
+                                       .FirstOrDefault()
+                })
+                .ToListAsync();
+
+            // Fetch user details for each unique patient
+            var result = new List<DoctorPatientSummaryDto>();
+            foreach (var p in patients)
+            {
+                var user = await _context.Users.FindAsync(p.PatientId);
+                var profile = await _context.Patients.FirstOrDefaultAsync(pp => pp.AppUserId == p.PatientId);
+                int age = 0;
+                if (profile?.DateOfBirth != null)
+                    age = DateTime.Today.Year - profile.DateOfBirth.Value.Year;
+
+                result.Add(new DoctorPatientSummaryDto
+                {
+                    PatientId = p.PatientId ?? string.Empty,
+                    FullName = user?.FullName ?? "غير معروف",
+                    Phone = user?.PhoneNumber,
+                    Email = user?.Email,
+                    Age = age,
+                    TotalAppointments = p.TotalAppointments,
+                    LastVisitDate = p.LastVisitDate,
+                    LastVisitStatus = p.LastVisitStatus
+                });
+            }
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Returns a patient's profile + their full appointment history with this doctor.
+        /// </summary>
+        [HttpGet("patients/{patientId}")]
+        public async Task<IActionResult> GetPatientDetail(string patientId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            // Verify this patient has at least one appointment with this doctor
+            var hasRelationship = await _context.Appointments
+                .AnyAsync(a => a.DoctorId == userId && a.PatientId == patientId);
+
+            if (!hasRelationship) return NotFound("هذا المريض ليس من مرضاك");
+
+            var user = await _context.Users.FindAsync(patientId);
+            var profile = await _context.Patients.FirstOrDefaultAsync(p => p.AppUserId == patientId);
+            int age = 0;
+            if (profile?.DateOfBirth != null)
+                age = DateTime.Today.Year - profile.DateOfBirth.Value.Year;
+
+            var appointments = await _context.Appointments
+                .Where(a => a.DoctorId == userId && a.PatientId == patientId)
+                .OrderByDescending(a => a.AppointmentDate)
+                .Select(a => new
+                {
+                    a.Id,
+                    Date = a.AppointmentDate.ToString("yyyy-MM-dd"),
+                    a.AppointmentTime,
+                    Status = MapStatus(a.Status),
+                    a.Diagnosis,
+                    a.DoctorNotes,
+                    a.PatientNotes,
+                    a.AppointmentType
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                PatientId = patientId,
+                FullName = user?.FullName ?? "غير معروف",
+                Email = user?.Email,
+                Phone = user?.PhoneNumber,
+                Age = age,
+                BloodType = profile?.BloodType,
+                Allergies = profile?.Allergies,
+                ChronicDiseases = profile?.ChronicDiseases,
+                Appointments = appointments
+            });
+        }
+
+        // ── Helper ───────────────────────────────────────────────
+
+        /// <summary>
+        /// Maps backend AppointmentStatus enum to frontend string values.
+        /// </summary>
+        private static string MapStatus(AppointmentStatus status) => status switch
+        {
+            AppointmentStatus.Pending   => "pending",
+            AppointmentStatus.Upcoming  => "confirmed",
+            AppointmentStatus.Completed => "completed",
+            AppointmentStatus.Cancelled => "cancelled",
+            _ => status.ToString().ToLower()
+        };
+    }
+}

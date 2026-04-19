@@ -96,6 +96,7 @@ namespace MyHealthcareApi.Models
     /// </summary>
     public enum AppointmentStatus
     {
+        Pending,       // قيد الانتظار
         Upcoming,      // موعد قادم
         Completed,     // تم الكشف
         Cancelled,     // ملغي
