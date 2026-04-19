@@ -17,6 +17,10 @@ namespace MyHealthcareApi.DTOs
         [Required, MinLength(6)]
         public string Password { get; set; } = null!;
 
+        [Required]
+        [Compare("Password", ErrorMessage = "كلمات المرور غير متطابقة")]
+        public string ConfirmPassword { get; set; } = null!;
+
         [Required, MaxLength(150)]
         public string FullName { get; set; } = null!;
 

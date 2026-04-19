@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +27,7 @@ namespace MyHealthcareApi.Controllers
         [HttpPost]
         public async Task<IActionResult> AddOrUpdateRating([FromBody] AddRatingDto dto)
         {
-            var userId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null) return Unauthorized();
 
             // التحقق من وجود الكيان
@@ -134,7 +135,7 @@ namespace MyHealthcareApi.Controllers
         [HttpDelete("{ratingId}")]
         public async Task<IActionResult> DeleteRating(int ratingId)
         {
-            var userId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null) return Unauthorized();
 
             var rating = await _context.Ratings.FindAsync(ratingId);
@@ -152,3 +153,5 @@ namespace MyHealthcareApi.Controllers
         }
     }
 }
+
+

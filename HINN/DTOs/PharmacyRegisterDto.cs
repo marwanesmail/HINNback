@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 
 namespace MyHealthcareApi.DTOs
@@ -10,10 +11,15 @@ namespace MyHealthcareApi.DTOs
         
         public string PharmacyName { get; set; } = null!;
         public string Email { get; set; } = null!;
+
+        [Required]
         public string Password { get; set; } = null!;
+
+        [Required]
+        [Compare("Password", ErrorMessage = "كلمات المرور غير متطابقة")]
+        public string ConfirmPassword { get; set; } = null!;
+
         public string Address { get; set; } = null!;
-        public double Latitude { get; set; }
-        public double Longitude { get; set; }
 
         
         // بيانات الاتصال

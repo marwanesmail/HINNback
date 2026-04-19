@@ -101,8 +101,11 @@ namespace MyHealthcareApi.Controllers
                     query = query.Where(po => po.Status == OrderStatus.Delivered);
             }
 
-            var orders = await query
+            var dbOrders = await query
                 .OrderByDescending(po => po.CreatedAt)
+                .ToListAsync();
+
+            var orders = dbOrders
                 .Select(po => new
                 {
                     po.Id,
@@ -121,7 +124,7 @@ namespace MyHealthcareApi.Controllers
                     po.Notes,
                     po.CreatedAt
                 })
-                .ToListAsync();
+                .ToList();
 
             return Ok(new
             {

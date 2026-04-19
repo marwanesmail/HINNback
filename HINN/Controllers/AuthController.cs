@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyHealthcareApi.Data;
@@ -53,111 +53,139 @@ namespace MyHealthcareApi.Controllers
         [HttpPost("register-pharmacy")]
         public async Task<IActionResult> RegisterPharmacy([FromForm] PharmacyRegisterDto model)
         {
-            var user = new AppUser
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                UserName = model.Email,
-                Email = model.Email
-            };
+                var user = new AppUser
+                {
+                    UserName = model.Email,
+                    Email = model.Email
+                };
 
-            var result = await _userManager.CreateAsync(user, model.Password);
-            if (!result.Succeeded)
-                return BadRequest(result.Errors);
+                var result = await _userManager.CreateAsync(user, model.Password);
+                if (!result.Succeeded)
+                    return BadRequest(result.Errors);
 
-            //  إضافة الدور المناسب
-            await _userManager.AddToRoleAsync(user, "Pharmacy");
+                //  إضافة الدور المناسب
+                await _userManager.AddToRoleAsync(user, "Pharmacy");
 
-            var pharmacy = new Pharmacy
+                var pharmacy = new Pharmacy
+                {
+                    PharmacyName = model.PharmacyName,
+                    AppUserId = user.Id,
+                    Address = model.Address,
+                    IsApproved = false, // الأدمن لازم يوافق
+                    LicenseImagePath = model.LicenseImage != null ? await SaveFile(model.LicenseImage) : string.Empty,
+                    TaxDocumentPath = model.TaxDocument != null ? await SaveFile(model.TaxDocument) : string.Empty
+                };
+
+                _context.Pharmacies.Add(pharmacy);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                // إرسال بريد ترحيبي
+                await _emailService.SendWelcomeEmailAsync(user.Email!, user.FullName ?? model.PharmacyName);
+                
+                // Audit Log
+                await _auditService.LogAsync(
+                    user.Id, user.Email!, AuditActionTypes.Register,
+                    entityType: "Pharmacy",
+                    entityId: Guid.TryParse(pharmacy.Id.ToString(), out var guid) ? guid : (Guid?)null,
+                    description: "New pharmacy registered",
+                    newData: new { pharmacy.PharmacyName, pharmacy.Address },
+                    success: true
+                );
+
+                return Ok(new { Message = "تم تسجيل الصيدلية بنجاح بانتظار موافقة الأدمن" });
+            }
+            catch (Exception ex)
             {
-                PharmacyName = model.PharmacyName,
-                AppUserId = user.Id,
-                Address = model.Address,
-                Latitude = model.Latitude,
-                Longitude = model.Longitude,
-                IsApproved = false, // الأدمن لازم يوافق
-                LicenseImagePath = model.LicenseImage != null ? await SaveFile(model.LicenseImage) : string.Empty,
-                TaxDocumentPath = model.TaxDocument != null ? await SaveFile(model.TaxDocument) : string.Empty
-            };
-
-            _context.Pharmacies.Add(pharmacy);
-            await _context.SaveChangesAsync();
-
-            // إرسال بريد ترحيبي
-            await _emailService.SendWelcomeEmailAsync(user.Email!, user.FullName ?? model.PharmacyName);
-            
-            // Audit Log
-            await _auditService.LogAsync(
-                user.Id, user.Email!, AuditActionTypes.Register,
-                entityType: "Pharmacy",
-                entityId: Guid.TryParse(pharmacy.Id.ToString(), out var guid) ? guid : (Guid?)null,
-                description: "New pharmacy registered",
-                newData: new { pharmacy.PharmacyName, pharmacy.Address },
-                success: true
-            );
-
-            return Ok(new { Message = "تم تسجيل الصيدلية بنجاح  بانتظار موافقة الأدمن" });
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { Message = "حدث خطأ أثناء التسجيل", Error = ex.Message });
+            }
         }
 
         //  تسجيل دكتور
         [HttpPost("register-doctor")]
         public async Task<IActionResult> RegisterDoctor([FromForm] DoctorRegisterDto model)
         {
-            var user = new AppUser
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                UserName = model.Email,
-                Email = model.Email,
-                FullName = model.FullName
-            };
+                var user = new AppUser
+                {
+                    UserName = model.Email,
+                    Email = model.Email,
+                    FullName = model.FullName
+                };
 
-            var result = await _userManager.CreateAsync(user, model.Password);
-            if (!result.Succeeded)
-                return BadRequest(result.Errors);
+                var result = await _userManager.CreateAsync(user, model.Password);
+                if (!result.Succeeded)
+                    return BadRequest(result.Errors);
 
-            //  إضافة الدور المناسب
-            await _userManager.AddToRoleAsync(user, "Doctor");
+                //  إضافة الدور المناسب
+                await _userManager.AddToRoleAsync(user, "Doctor");
 
-            var doctor = new Doctor
+                var doctor = new Doctor
+                {
+                    AppUserId = user.Id,
+                    Specialty = model.Specialty,
+                    LicenseImageUrl = model.LicenseImage != null ? await SaveFile(model.LicenseImage) : string.Empty
+                };
+
+                _context.Doctors.Add(doctor);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new { Message = "تم تسجيل الطبيب بنجاح بانتظار موافقة الأدمن" });
+            }
+            catch (Exception ex)
             {
-                AppUserId = user.Id,
-                Specialty = model.Specialty,
-                LicenseImageUrl = model.LicenseImage != null ? await SaveFile(model.LicenseImage) : string.Empty
-            };
-
-            _context.Doctors.Add(doctor);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { Message = "تم تسجيل الطبيب بنجاح  بانتظار موافقة الأدمن" });
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { Message = "حدث خطأ أثناء التسجيل", Error = ex.Message });
+            }
         }
 
         //  تسجيل شركة أدوية
         [HttpPost("register-company")]
         public async Task<IActionResult> RegisterCompany([FromForm] CompanyRegisterDto model)
         {
-            var user = new AppUser
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                UserName = model.Email,
-                Email = model.Email
-            };
+                var user = new AppUser
+                {
+                    UserName = model.Email,
+                    Email = model.Email
+                };
 
-            var result = await _userManager.CreateAsync(user, model.Password);
-            if (!result.Succeeded)
-                return BadRequest(result.Errors);
+                var result = await _userManager.CreateAsync(user, model.Password);
+                if (!result.Succeeded)
+                    return BadRequest(result.Errors);
 
-            //  إضافة الدور المناسب
-            await _userManager.AddToRoleAsync(user, "Company");
+                //  إضافة الدور المناسب
+                await _userManager.AddToRoleAsync(user, "Company");
 
-            var company = new Company
+                var company = new Company
+                {
+                    CompanyName = model.CompanyName,
+                    LicenseNumber = model.LicenseNumber,
+                    AppUserId = user.Id,
+                    IsApproved = false, // الأدمن لازم يوافق الأول
+                    LicenseDocumentPath = model.LicenseDocument != null ? await SaveFile(model.LicenseDocument) : string.Empty
+                };
+
+                _context.Companies.Add(company);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new { Message = "تم تسجيل شركة الأدوية بنجاح بانتظار موافقة الأدمن" });
+            }
+            catch (Exception ex)
             {
-                CompanyName = model.CompanyName,
-                LicenseNumber = model.LicenseNumber,
-                AppUserId = user.Id,
-                IsApproved = false, // الأدمن لازم يوافق الأول
-                LicenseDocumentPath = model.LicenseDocument != null ? await SaveFile(model.LicenseDocument) : string.Empty
-            };
-
-            _context.Companies.Add(company);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { Message = "تم تسجيل شركة الأدوية بنجاح  بانتظار موافقة الأدمن" });
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { Message = "حدث خطأ أثناء التسجيل", Error = ex.Message });
+            }
         }
 
         //  تسجيل مريض جديد مع بيانات صحية كاملة
@@ -167,71 +195,81 @@ namespace MyHealthcareApi.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var user = new AppUser
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                UserName = model.Email,
-                Email = model.Email,
-                FullName = model.FullName,
-                PhoneNumber = model.PhoneNumber
-            };
+                var user = new AppUser
+                {
+                    UserName = model.Email,
+                    Email = model.Email,
+                    FullName = model.FullName,
+                    PhoneNumber = model.PhoneNumber
+                };
 
-            var result = await _userManager.CreateAsync(user, model.Password);
-            if (!result.Succeeded)
-                return BadRequest(result.Errors);
+                var result = await _userManager.CreateAsync(user, model.Password);
+                if (!result.Succeeded)
+                    return BadRequest(result.Errors);
 
-            //  إضافة الدور المناسب
-            await _userManager.AddToRoleAsync(user, "Patient");
+                //  إضافة الدور المناسب
+                await _userManager.AddToRoleAsync(user, "Patient");
 
-            //  إنشاء سجل المريض مع البيانات الصحية
-            var patient = new Patient
+                //  إنشاء سجل المريض مع البيانات الصحية
+                var patient = new Patient
+                {
+                    AppUserId = user.Id,
+                    MedicalRecordNumber = $"PAT-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
+                    PhoneNumber = model.PhoneNumber,
+                    Gender = model.Gender,
+                    DateOfBirth = model.DateOfBirth,
+                    HeightCm = model.HeightCm,
+                    WeightKg = model.WeightKg,
+                    BloodType = model.BloodType,
+                    Allergies = model.Allergies,
+                    ChronicDiseases = model.ChronicDiseases,
+                    CurrentMedications = model.CurrentMedications,
+                    Surgeries = model.Surgeries,
+                    MedicalNotes = model.MedicalNotes,
+                    EmergencyContactName = model.EmergencyContactName,
+                    EmergencyContactPhone = model.EmergencyContactPhone,
+                    LastMedicalUpdate = DateTime.UtcNow
+                };
+
+                _context.Patients.Add(patient);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                // إرسال بريد ترحيبي
+                await _emailService.SendWelcomeEmailAsync(user.Email!, user.FullName);
+
+                //  Audit Log
+                await _auditService.LogAsync(
+                    user.Id, user.Email!, AuditActionTypes.Register,
+                    entityType: "Patient",
+                    entityId: Guid.TryParse(patient.Id.ToString(), out var guid) ? guid : (Guid?)null,
+                    description: "New patient registered with medical profile",
+                    newData: new { patient.MedicalRecordNumber, patient.BloodType, patient.Allergies },
+                    success: true
+                );
+
+                return Ok(new 
+                { 
+                    Message = "تم تسجيل المريض بنجاح",
+                    PatientId = patient.Id,
+                    MedicalRecordNumber = patient.MedicalRecordNumber
+                });
+            }
+            catch (Exception ex)
             {
-                AppUserId = user.Id,
-                MedicalRecordNumber = $"PAT-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
-                PhoneNumber = model.PhoneNumber,
-                Gender = model.Gender,
-                DateOfBirth = model.DateOfBirth,
-                HeightCm = model.HeightCm,
-                WeightKg = model.WeightKg,
-                BloodType = model.BloodType,
-                Allergies = model.Allergies,
-                ChronicDiseases = model.ChronicDiseases,
-                CurrentMedications = model.CurrentMedications,
-                Surgeries = model.Surgeries,
-                MedicalNotes = model.MedicalNotes,
-                EmergencyContactName = model.EmergencyContactName,
-                EmergencyContactPhone = model.EmergencyContactPhone,
-                LastMedicalUpdate = DateTime.UtcNow
-            };
-
-            _context.Patients.Add(patient);
-            await _context.SaveChangesAsync();
-
-            // إرسال بريد ترحيبي
-            await _emailService.SendWelcomeEmailAsync(user.Email!, user.FullName);
-
-            //  Audit Log
-            await _auditService.LogAsync(
-                user.Id, user.Email!, AuditActionTypes.Register,
-                entityType: "Patient",
-                entityId: Guid.TryParse(patient.Id.ToString(), out var guid) ? guid : (Guid?)null,
-                description: "New patient registered with medical profile",
-                newData: new { patient.MedicalRecordNumber, patient.BloodType, patient.Allergies },
-                success: true
-            );
-
-            return Ok(new 
-            { 
-                Message = "تم تسجيل المريض بنجاح",
-                PatientId = patient.Id,
-                MedicalRecordNumber = patient.MedicalRecordNumber
-            });
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { Message = "حدث خطأ أثناء التسجيل", Error = ex.Message });
+            }
         }
 
         //  تسجيل دخول عام (لأي مستخدم)
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
-            var userId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value ?? "anonymous";
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "anonymous";
             
             // Rate Limiting: منع الهجمات
             if (!_rateLimitService.IsAllowed(userId, "login", RateLimitPresets.LoginAttempts, RateLimitPresets.LoginWindowSeconds))
@@ -285,7 +323,7 @@ namespace MyHealthcareApi.Controllers
                         success: false,
                         errorMessage: "Account not approved"
                     );
-                    return Unauthorized("الحساب لم تتم الموافقة عليه بعد من الأدمن 🚫");
+                    return Unauthorized("الحساب لم تتم الموافقة عليه بعد من الأدمن");
                 }
 
                 var token = await GenerateJwtToken(user);
@@ -348,11 +386,20 @@ namespace MyHealthcareApi.Controllers
         {
             if (file == null) return string.Empty;
 
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".pdf" };
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            
+            if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension))
+                throw new InvalidOperationException("نوع الملف غير مسموح به. مسموح فقط بـ JPG, PNG, PDF");
+
+            if (file.Length > 5 * 1024 * 1024)
+                throw new InvalidOperationException("حجم الملف يجب ألا يتجاوز 5 ميجابايت");
+
             var folder = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads");
             if (!Directory.Exists(folder))
                 Directory.CreateDirectory(folder);
 
-            var filePath = Path.Combine(folder, Guid.NewGuid() + Path.GetExtension(file.FileName));
+            var filePath = Path.Combine(folder, Guid.NewGuid() + extension);
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
                 await file.CopyToAsync(stream);

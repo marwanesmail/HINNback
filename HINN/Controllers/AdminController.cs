@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -65,10 +65,47 @@ namespace MyHealthcareApi.Controllers
         public async Task<IActionResult> GetPendingDoctors()
         {
             var doctors = await _context.Doctors
-                .Where(d => string.IsNullOrEmpty(d.LicenseImageUrl))
+                .Where(d => !d.IsApproved)
+                .Include(d => d.AppUser)
+                .Select(d => new
+                {
+                    d.Id,
+                    d.Specialty,
+                    d.LicenseImageUrl,
+                    Email = d.AppUser.Email,
+                    FullName = d.AppUser.FullName
+                })
                 .ToListAsync();
 
             return Ok(doctors);
+        }
+
+        // اعتماد طبيب
+        [HttpPost("approve-doctor/{id}")]
+        public async Task<IActionResult> ApproveDoctor(int id)
+        {
+            var doctor = await _context.Doctors.FindAsync(id);
+            if (doctor == null)
+                return NotFound();
+
+            doctor.IsApproved = true;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { Message = "تمت الموافقة على الطبيب بنجاح" });
+        }
+
+        // رفض أو حذف طبيب
+        [HttpPost("reject-doctor/{id}")]
+        public async Task<IActionResult> RejectDoctor(int id)
+        {
+            var doctor = await _context.Doctors.FindAsync(id);
+            if (doctor == null)
+                return NotFound();
+
+            _context.Doctors.Remove(doctor);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { Message = "تم رفض/حذف الطبيب" });
         }
 
         //عرض الشركات اللي مستني موافقة الأدمن

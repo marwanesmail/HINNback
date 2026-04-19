@@ -96,8 +96,11 @@ namespace MyHealthcareApi.Controllers
                 query = query.Where(i => i.MedicineName.Contains(searchTerm));
             }
 
-            var inventory = await query
+            var dbInventory = await query
                 .OrderBy(i => i.MedicineName)
+                .ToListAsync();
+
+            var inventory = dbInventory
                 .Select(i => new
                 {
                     i.Id,
@@ -116,7 +119,7 @@ namespace MyHealthcareApi.Controllers
                     i.CreatedAt,
                     i.LastUpdated
                 })
-                .ToListAsync();
+                .ToList();
 
             return Ok(new
             {

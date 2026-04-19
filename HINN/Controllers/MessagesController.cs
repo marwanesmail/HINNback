@@ -1,10 +1,11 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyHealthcareApi.Data;
 using MyHealthcareApi.DTOs;
 using MyHealthcareApi.Models;
+using System.Security.Claims;
 
 namespace MyHealthcareApi.Controllers
 {
@@ -25,8 +26,13 @@ namespace MyHealthcareApi.Controllers
         [HttpPost]
         public async Task<IActionResult> SendMessage([FromBody] MessageDto dto)
         {
-            var senderId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var senderId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (senderId == null) return Unauthorized();
+
+            // التأكد من أن المستخدم المستلم موجود فعلاً لمنع خطأ قاعدة البيانات
+            var receiverExists = await _db.Users.AnyAsync(u => u.Id == dto.ReceiverId);
+            if (!receiverExists)
+                return BadRequest(new { Message = "المستخدم المستلم (Receiver) غير موجود في النظام." });
 
             var msg = new Message
             {
@@ -44,7 +50,7 @@ namespace MyHealthcareApi.Controllers
         [HttpGet("conversations/{otherUserId}")]
         public async Task<IActionResult> GetConversation(string otherUserId)
         {
-            var me = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var me = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (me == null) return Unauthorized();
 
             var conv = await _db.Messages

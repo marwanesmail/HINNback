@@ -48,7 +48,7 @@ namespace MyHealthcareApi.Controllers
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
         {
-            var userId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null) return Unauthorized();
 
             var user = await _userManager.FindByIdAsync(userId);
@@ -102,7 +102,7 @@ namespace MyHealthcareApi.Controllers
         [HttpPut("profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdatePatientProfileDto dto)
         {
-            var userId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null) return Unauthorized();
 
             var patient = await _context.Patients
@@ -154,7 +154,7 @@ namespace MyHealthcareApi.Controllers
         [HttpPut("profile/vitals")]
         public async Task<IActionResult> UpdateVitals([FromBody] UpdateVitalsDto dto)
         {
-            var userId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null) return Unauthorized();
 
             var patient = await _context.Patients
@@ -182,7 +182,7 @@ namespace MyHealthcareApi.Controllers
         [HttpGet("dashboard/stats")]
         public async Task<IActionResult> GetDashboardStats()
         {
-            var userId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null) return Unauthorized();
 
             var patient = await _context.Patients
@@ -260,7 +260,7 @@ namespace MyHealthcareApi.Controllers
         [HttpPost("appointments/book")]
         public async Task<IActionResult> BookAppointment([FromBody] BookAppointmentDto dto)
         {
-            var patientId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var patientId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (patientId == null) return Unauthorized();
 
             // التحقق من إن الموعد مش في الماضي
@@ -300,7 +300,7 @@ namespace MyHealthcareApi.Controllers
         [HttpGet("appointments")]
         public async Task<IActionResult> GetAppointments([FromQuery] string? status = null)
         {
-            var patientId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var patientId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (patientId == null) return Unauthorized();
 
             var query = _context.Appointments
@@ -369,7 +369,7 @@ namespace MyHealthcareApi.Controllers
         [HttpGet("appointments/{id}")]
         public async Task<IActionResult> GetAppointment(int id)
         {
-            var patientId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var patientId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (patientId == null) return Unauthorized();
 
             var appointment = await _context.Appointments
@@ -420,7 +420,7 @@ namespace MyHealthcareApi.Controllers
         [HttpPut("appointments/{id}/cancel")]
         public async Task<IActionResult> CancelAppointment(int id, [FromBody] CancelAppointmentDto dto)
         {
-            var patientId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var patientId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (patientId == null) return Unauthorized();
 
             var appointment = await _context.Appointments
@@ -457,7 +457,7 @@ namespace MyHealthcareApi.Controllers
         [HttpGet("medical-records")]
         public async Task<IActionResult> GetMedicalRecords([FromQuery] string? type = null, [FromQuery] DateTime? fromDate = null, [FromQuery] DateTime? toDate = null)
         {
-            var patientId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var patientId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (patientId == null) return Unauthorized();
 
             var records = new List<MedicalRecordResponseDto>();
@@ -647,7 +647,7 @@ namespace MyHealthcareApi.Controllers
         [HttpPost("appointments/book-from-availability")]
         public async Task<IActionResult> BookFromAvailability([FromBody] BookFromAvailabilityDto dto)
         {
-            var patientId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var patientId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (patientId == null) return Unauthorized();
 
             var availability = await _context.DoctorAvailabilities
@@ -698,8 +698,13 @@ namespace MyHealthcareApi.Controllers
         [HttpPost("request-medicine")]
         public async Task<IActionResult> RequestMedicine([FromForm] PrescriptionRequestDto dto)
         {
-            var patientId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var patientId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (patientId == null) return Unauthorized();
+
+            if (string.IsNullOrWhiteSpace(dto.Title) && dto.PrescriptionImage == null)
+            {
+                return BadRequest("يجب إما كتابة اسم الدواء أو رفع صورة الروشتة.");
+            }
 
             // حفظ صورة الروشتة لو موجودة
             string? imagePath = null;
@@ -712,12 +717,15 @@ namespace MyHealthcareApi.Controllers
             var prescription = new Prescription
             {
                 PatientId = patientId,
-                Title = dto.Title,
+                Title = string.IsNullOrWhiteSpace(dto.Title) ? "طلب دواء من صورة" : dto.Title,
                 Notes = dto.Notes,
                 PrescriptionImagePath = imagePath,
                 Latitude = dto.Latitude,
                 Longitude = dto.Longitude,
                 SearchRadiusKm = dto.SearchRadiusKm,
+                DeliveryAddress = dto.DeliveryAddress,
+                PatientName = dto.PatientName,
+                PhoneNumber = dto.PhoneNumber,
                 Status = PrescriptionStatus.Pending
             };
 
@@ -739,7 +747,7 @@ namespace MyHealthcareApi.Controllers
         [HttpPost("search-medicine")]
         public async Task<IActionResult> SearchMedicine([FromBody] MedicineSearchDto dto)
         {
-            var patientId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var patientId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (patientId == null) return Unauthorized();
 
             // إنشاء روشتة مبسطة للبحث
@@ -750,6 +758,7 @@ namespace MyHealthcareApi.Controllers
                 Latitude = dto.Latitude,
                 Longitude = dto.Longitude,
                 SearchRadiusKm = dto.SearchRadiusKm,
+                DeliveryAddress = dto.DeliveryAddress,
                 Status = PrescriptionStatus.Pending
             };
 
@@ -784,7 +793,7 @@ namespace MyHealthcareApi.Controllers
         [HttpGet("my-responses/{prescriptionId}")]
         public async Task<IActionResult> GetResponses(int prescriptionId)
         {
-            var patientId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var patientId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (patientId == null) return Unauthorized();
 
             var prescription = await _context.Prescriptions
@@ -817,7 +826,7 @@ namespace MyHealthcareApi.Controllers
         [HttpGet("my-prescriptions")]
         public async Task<IActionResult> GetMyPrescriptions()
         {
-            var patientId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var patientId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (patientId == null) return Unauthorized();
 
             var prescriptions = await _context.Prescriptions
@@ -840,7 +849,7 @@ namespace MyHealthcareApi.Controllers
         [HttpPost("select-pharmacy/{responseId}")]
         public async Task<IActionResult> SelectPharmacy(int responseId)
         {
-            var patientId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var patientId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (patientId == null) return Unauthorized();
 
             var response = await _context.PharmacyResponses
@@ -929,3 +938,4 @@ namespace MyHealthcareApi.Controllers
         }
     }
 }
+

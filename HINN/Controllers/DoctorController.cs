@@ -32,7 +32,7 @@ namespace MyHealthcareApi.Controllers
         [HttpPost("prescriptions")]
         public async Task<IActionResult> CreatePrescription([FromBody] CreatePrescriptionDto dto)
         {
-            var doctorId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (doctorId == null) return Unauthorized();
 
             // التحقق من إن المريض موجود
@@ -86,7 +86,7 @@ namespace MyHealthcareApi.Controllers
         [HttpGet("prescriptions")]
         public async Task<IActionResult> GetMyPrescriptions([FromQuery] string? status = null)
         {
-            var doctorId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (doctorId == null) return Unauthorized();
 
             var query = _context.Prescriptions
@@ -145,7 +145,7 @@ namespace MyHealthcareApi.Controllers
         [HttpGet("prescriptions/{id}")]
         public async Task<IActionResult> GetPrescription(int id)
         {
-            var doctorId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (doctorId == null) return Unauthorized();
 
             var prescription = await _context.Prescriptions
@@ -204,7 +204,7 @@ namespace MyHealthcareApi.Controllers
         [HttpPut("prescriptions/{id}/status")]
         public async Task<IActionResult> UpdatePrescriptionStatus(int id, [FromBody] UpdatePrescriptionStatusDto dto)
         {
-            var doctorId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (doctorId == null) return Unauthorized();
 
             var prescription = await _context.Prescriptions
@@ -227,7 +227,7 @@ namespace MyHealthcareApi.Controllers
         [HttpGet("appointments")]
         public async Task<IActionResult> GetMyAppointments([FromQuery] string? status = null)
         {
-            var doctorId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (doctorId == null) return Unauthorized();
 
             var query = _context.Appointments
@@ -282,7 +282,7 @@ namespace MyHealthcareApi.Controllers
         [HttpPut("appointments/{id}")]
         public async Task<IActionResult> UpdateAppointment(int id, [FromBody] UpdateAppointmentDto dto)
         {
-            var doctorId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (doctorId == null) return Unauthorized();
 
             var appointment = await _context.Appointments
@@ -320,7 +320,7 @@ namespace MyHealthcareApi.Controllers
         [HttpPost("availability")]
         public async Task<IActionResult> AddAvailability([FromBody] AddAvailabilityDto dto)
         {
-            var doctorId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (doctorId == null) return Unauthorized();
 
             var availabilities = new List<DoctorAvailability>();
@@ -375,7 +375,7 @@ namespace MyHealthcareApi.Controllers
         [HttpGet("availability")]
         public async Task<IActionResult> GetMyAvailability([FromQuery] DateTime? fromDate = null, [FromQuery] DateTime? toDate = null)
         {
-            var doctorId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (doctorId == null) return Unauthorized();
 
             var query = _context.DoctorAvailabilities
@@ -564,3 +564,4 @@ namespace MyHealthcareApi.Controllers
         public DateTime? BookedAt { get; set; }
     }
 }
+

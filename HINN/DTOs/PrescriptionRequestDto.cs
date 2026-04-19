@@ -6,9 +6,8 @@ namespace MyHealthcareApi.DTOs
     // DTO لرفع روشتة جديدة
     public class PrescriptionRequestDto
     {
-        [Required]
         [MaxLength(200)]
-        public string Title { get; set; } = null!; // اسم الدواء أو عنوان الروشتة
+        public string? Title { get; set; } // اسم الدواء أو عنوان الروشتة
 
         public string? Notes { get; set; }
 
@@ -21,6 +20,10 @@ namespace MyHealthcareApi.DTOs
         public double Longitude { get; set; }
 
         public double SearchRadiusKm { get; set; } = 5; // نطاق البحث بالكيلو
+
+        public string? DeliveryAddress { get; set; } // العنوان النصي
+        public string? PatientName { get; set; } // اسم المريض (للتوصيل)
+        public string? PhoneNumber { get; set; } // رقم الهاتف (للتوصيل)
     }
 
     // DTO للبحث عن دواء بالاسم
@@ -36,5 +39,7 @@ namespace MyHealthcareApi.DTOs
         public double Longitude { get; set; }
 
         public double SearchRadiusKm { get; set; } = 5;
+
+        public string? DeliveryAddress { get; set; } // العنوان النصي
     }
 }

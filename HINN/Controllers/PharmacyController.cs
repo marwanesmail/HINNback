@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -29,55 +29,7 @@ namespace MyHealthcareApi.Controllers
             _userManager = userManager;
         }
 
-        //   جديدة تسجيل صيدلية
-        [HttpPost("register")]
-        public async Task<IActionResult> RegisterPharmacy([FromForm] PharmacyRegisterDto dto)
-        {
-            if (dto == null)
-                return BadRequest("البيانات غير مكتملة.");
 
-            //  إنشاء المستخدم الأول
-            var user = new AppUser
-            {
-                UserName = dto.Email,
-                Email = dto.Email
-            };
-
-            var result = await _userManager.CreateAsync(user, dto.Password);
-            if (!result.Succeeded)
-                return BadRequest(result.Errors);
-
-            //  إضافة الدور المناسب
-            await _userManager.AddToRoleAsync(user, "Pharmacy");
-
-            //  رفع صور المستندات
-            string licensePath = dto.LicenseImage != null ? await SaveFile(dto.LicenseImage) : string.Empty;
-            string taxPath = dto.TaxDocument != null ? await SaveFile(dto.TaxDocument) : string.Empty;
-            string commercialRecordPath = dto.CommercialRecordImage != null ? await SaveFile(dto.CommercialRecordImage) : string.Empty;
-
-            //  إنشاء كيان الصيدلية في قاعدة البيانات
-            var pharmacy = new Pharmacy
-            {
-                AppUserId = user.Id,
-                PharmacyName = dto.PharmacyName,
-                Address = dto.Address,
-                Latitude = dto.Latitude,
-                Longitude = dto.Longitude,
-                PhoneNumber = dto.PhoneNumber,
-                Phone2 = dto.Phone2,
-                WorkingHours = dto.WorkingHours,
-                DeliveryArea = dto.DeliveryArea,
-                LicenseImagePath = licensePath,
-                TaxDocumentPath = taxPath,
-                CommercialRecordPath = commercialRecordPath,
-                IsApproved = false // في انتظار موافقة الأدمن
-            };
-
-            _context.Pharmacies.Add(pharmacy);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "تم تسجيل الصيدلية بنجاح، بانتظار موافقة الإدارة." });
-        }
 
         //  دالة مساعدة لحفظ الملفات في السيرفر
         private async Task<string> SaveFile(IFormFile file)
@@ -103,7 +55,7 @@ namespace MyHealthcareApi.Controllers
         [HttpGet("nearby-requests")]
         public async Task<IActionResult> GetNearbyRequests()
         {
-            var userId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null) return Unauthorized();
 
             var pharmacy = await _context.Pharmacies
@@ -144,7 +96,7 @@ namespace MyHealthcareApi.Controllers
         [HttpPost("respond-to-prescription")]
         public async Task<IActionResult> RespondToPrescription([FromBody] PharmacyResponseRequestDto dto)
         {
-            var userId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null) return Unauthorized();
 
             var pharmacy = await _context.Pharmacies
@@ -245,7 +197,7 @@ namespace MyHealthcareApi.Controllers
         [HttpGet("my-responses")]
         public async Task<IActionResult> GetMyResponses()
         {
-            var userId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null) return Unauthorized();
 
             var pharmacy = await _context.Pharmacies
@@ -301,3 +253,4 @@ namespace MyHealthcareApi.Controllers
     }
 
 }
+

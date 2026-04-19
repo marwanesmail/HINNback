@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
 namespace MyHealthcareApi.DTOs
@@ -16,6 +16,10 @@ namespace MyHealthcareApi.DTOs
 
         [Required]
         public string Password { get; set; } = null!;
+
+        [Required]
+        [Compare("Password", ErrorMessage = "كلمات المرور غير متطابقة")]
+        public string ConfirmPassword { get; set; } = null!;
 
         public IFormFile? LicenseDocument { get; set; } // ملف الترخيص
     }

@@ -21,15 +21,14 @@ namespace MyHealthcareApi.Models
         // ═══════════════════════════════════════════════════════
         
         /// <summary>
-        /// ID الطبيب اللي كتب الروشتة
+        /// ID الطبيب اللي كتب الروشتة (اختياري لو المريض بيطلب دواء من غير روشتة دكتور)
         /// </summary>
-        [Required]
-        public string DoctorId { get; set; } = null!;
+        public string? DoctorId { get; set; }
         
         /// <summary>
         /// بيانات الطبيب
         /// </summary>
-        public virtual AppUser Doctor { get; set; } = null!;
+        public virtual AppUser? Doctor { get; set; }
 
         // عنوان الروشتة أو اسم الدواء الرئيسي
         [Required]

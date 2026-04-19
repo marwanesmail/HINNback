@@ -35,10 +35,13 @@ namespace MyHealthcareApi.Controllers
             if (pharmacy == null)
                 return NotFound("الصيدلية غير موجودة");
 
-            var exchanges = await _context.DrugExchanges
+            var dbExchanges = await _context.DrugExchanges
                 .Where(de => de.ToPharmacyId == pharmacy.Id)
                 .Include(de => de.FromPharmacy)
                 .OrderByDescending(de => de.CreatedAt)
+                .ToListAsync();
+
+            var exchanges = dbExchanges
                 .Select(de => new
                 {
                     de.Id,
@@ -58,7 +61,7 @@ namespace MyHealthcareApi.Controllers
                     de.CreatedAt,
                     de.RespondedAt
                 })
-                .ToListAsync();
+                .ToList();
 
             return Ok(new
             {
@@ -85,10 +88,13 @@ namespace MyHealthcareApi.Controllers
             if (pharmacy == null)
                 return NotFound("الصيدلية غير موجودة");
 
-            var exchanges = await _context.DrugExchanges
+            var dbExchanges = await _context.DrugExchanges
                 .Where(de => de.FromPharmacyId == pharmacy.Id)
                 .Include(de => de.ToPharmacy)
                 .OrderByDescending(de => de.CreatedAt)
+                .ToListAsync();
+
+            var exchanges = dbExchanges
                 .Select(de => new
                 {
                     de.Id,
@@ -105,7 +111,7 @@ namespace MyHealthcareApi.Controllers
                     de.CreatedAt,
                     de.RespondedAt
                 })
-                .ToListAsync();
+                .ToList();
 
             return Ok(new
             {

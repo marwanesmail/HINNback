@@ -21,6 +21,7 @@
           "Microsoft.EntityFrameworkCore.Proxies": "8.0.21",
           "Microsoft.EntityFrameworkCore.SqlServer": "8.0.21",
           "Microsoft.EntityFrameworkCore.Sqlite": "8.0.21",
+          "Microsoft.EntityFrameworkCore.Tools": "10.0.6",
           "Microsoft.Extensions.Configuration.Json": "8.0.1",
           "NetTopologySuite": "2.6.0",
           "Swashbuckle.AspNetCore": "8.1.4",
@@ -770,6 +771,11 @@
             "assemblyVersion": "8.0.21.0",
             "fileVersion": "8.0.2125.47512"
           }
+        }
+      },
+      "Microsoft.EntityFrameworkCore.Tools/10.0.6": {
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore.Design": "8.0.21"
         }
       },
       "Microsoft.Extensions.ApiDescription.Server/6.0.5": {},
@@ -2124,6 +2130,13 @@
       "sha512": "sha512-sjWMu0M3LRQaK+abpeBNNwG+qECsHnQTbv+C9mk30X9Zr/ZVJNHj5Y+HnE2JH9i4F/o5/KdcMwE1jHBcImvVMA==",
       "path": "microsoft.entityframeworkcore.sqlserver/8.0.21",
       "hashPath": "microsoft.entityframeworkcore.sqlserver.8.0.21.nupkg.sha512"
+    },
+    "Microsoft.EntityFrameworkCore.Tools/10.0.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-KYHcG6LzOnK2ZbTGoMRUcJ+rl0eWGDVF3ZbanPuZ4Ar5r/Fg/zkakKyt4YZpN+jT2thysKN7G7dlrthsBj9yWw==",
+      "path": "microsoft.entityframeworkcore.tools/10.0.6",
+      "hashPath": "microsoft.entityframeworkcore.tools.10.0.6.nupkg.sha512"
     },
     "Microsoft.Extensions.ApiDescription.Server/6.0.5": {
       "type": "package",
