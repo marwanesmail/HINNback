@@ -25,7 +25,8 @@ namespace MyHealthcareApi
             { "DoctorAvailabilities", new List<string> { "Id", "DoctorId", "Date", "StartTime", "EndTime", "IsAvailable", "BookedByPatientId", "AppointmentType", "BookedAt", "ConsultationFee", "CreatedAt", "DurationMinutes", "Location", "Notes" } },
             { "PharmacyInventories", new List<string> { "Id", "PharmacyId", "MedicineName", "Quantity", "MinimumQuantity", "ExpiryDate", "Price", "BatchNumber", "Manufacturer", "StorageLocation", "Notes", "CreatedAt", "LastUpdated" } },
             { "DrugExchanges", new List<string> { "Id", "FromPharmacyId", "ToPharmacyId", "MedicineName", "Quantity", "Status", "RespondedAt", "Notes", "BatchNumber", "CreatedAt", "ExchangeType", "ExpiryDate", "Reason", "ResponseNote", "SuggestedPrice" } },
-            { "PharmacyOrders", new List<string> { "Id", "PharmacyId", "CompanyId", "MedicineName", "Quantity", "Category", "ExpectedPrice", "Priority", "Status", "CompanyResponse", "FinalPrice", "RespondedAt", "ExpectedDeliveryDate", "ActualDeliveryDate", "Notes", "CreatedAt" } }
+            { "PharmacyOrders", new List<string> { "Id", "PharmacyId", "CompanyId", "MedicineName", "Quantity", "Category", "ExpectedPrice", "Priority", "Status", "CompanyResponse", "FinalPrice", "RespondedAt", "ExpectedDeliveryDate", "ActualDeliveryDate", "Notes", "CreatedAt" } },
+            { "CompanyMedicines", new List<string> { "Id", "CompanyId", "MedicineName", "Category", "Description", "ImagePath", "UnitPrice", "StockQuantity", "MinimumOrderQuantity", "ProductionDate", "ExpiryDate", "IsAvailable", "CreatedAt", "UpdatedAt" } }
         };
 
         // Tables to strictly ignore when dropping (System & Identity tables)

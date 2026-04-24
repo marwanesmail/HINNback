@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MyHealthcareApi.Models;
 
@@ -24,6 +24,7 @@ namespace MyHealthcareApi.Data
         public DbSet<PharmacyInventory> PharmacyInventories { get; set; }
         public DbSet<DrugExchange> DrugExchanges { get; set; }
         public DbSet<PharmacyOrder> PharmacyOrders { get; set; }
+        public DbSet<CompanyMedicine> CompanyMedicines { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -228,6 +229,30 @@ namespace MyHealthcareApi.Data
             
             builder.Entity<PharmacyOrder>()
                 .HasIndex(po => po.MedicineName);
+
+            // CompanyMedicine → Company
+            builder.Entity<CompanyMedicine>()
+                .HasOne(cm => cm.Company)
+                .WithMany()
+                .HasForeignKey(cm => cm.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<CompanyMedicine>()
+                .Property(cm => cm.UnitPrice)
+                .HasPrecision(18, 2);
+
+            // Indexes for CompanyMedicine
+            builder.Entity<CompanyMedicine>()
+                .HasIndex(cm => cm.CompanyId);
+
+            builder.Entity<CompanyMedicine>()
+                .HasIndex(cm => cm.MedicineName);
+
+            builder.Entity<CompanyMedicine>()
+                .HasIndex(cm => cm.IsAvailable);
+
+            builder.Entity<CompanyMedicine>()
+                .HasIndex(cm => cm.Category);
         }
     }
 }
