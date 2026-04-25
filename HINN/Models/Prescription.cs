@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 
 namespace MyHealthcareApi.Models
 {
@@ -132,6 +133,11 @@ namespace MyHealthcareApi.Models
 
         // الردود اللي جات من الصيدليات
         public virtual ICollection<PharmacyResponse>? Responses { get; set; }
+
+        /// <summary>
+        /// قائمة الأدوية المطلوبة في هذه الروشتة
+        /// </summary>
+        public virtual ICollection<PrescriptionItem> Items { get; set; } = new List<PrescriptionItem>();
     }
 
     public enum PrescriptionStatus

@@ -23,10 +23,14 @@ namespace MyHealthcareApi
             { "AuditLogs", new List<string> { "Id", "UserId", "UserName", "ActionType", "EntityType", "EntityId", "Description", "OldData", "NewData", "IpAddress", "UserAgent", "Success", "ErrorMessage", "ExecutionTimeMs", "CreatedAt" } },
             { "Appointments", new List<string> { "Id", "PatientId", "DoctorId", "AppointmentDate", "Status", "CreatedAt", "CancellationReason", "CancelledAt", "CompletedAt", "Diagnosis", "DoctorNotes", "PatientNotes", "Prescription", "Specialty", "AppointmentTime", "AppointmentType" } },
             { "DoctorAvailabilities", new List<string> { "Id", "DoctorId", "Date", "StartTime", "EndTime", "IsAvailable", "BookedByPatientId", "AppointmentType", "BookedAt", "ConsultationFee", "CreatedAt", "DurationMinutes", "Location", "Notes" } },
-            { "PharmacyInventories", new List<string> { "Id", "PharmacyId", "MedicineName", "Quantity", "MinimumQuantity", "ExpiryDate", "Price", "BatchNumber", "Manufacturer", "StorageLocation", "Notes", "CreatedAt", "LastUpdated" } },
+            { "PharmacyInventories", new List<string> { "Id", "PharmacyId", "MedicineName", "CompanyMedicineId", "Quantity", "MinimumQuantity", "ExpiryDate", "Price", "BatchNumber", "Manufacturer", "StorageLocation", "Notes", "CreatedAt", "LastUpdated" } },
             { "DrugExchanges", new List<string> { "Id", "FromPharmacyId", "ToPharmacyId", "MedicineName", "Quantity", "Status", "RespondedAt", "Notes", "BatchNumber", "CreatedAt", "ExchangeType", "ExpiryDate", "Reason", "ResponseNote", "SuggestedPrice" } },
-            { "PharmacyOrders", new List<string> { "Id", "PharmacyId", "CompanyId", "MedicineName", "Quantity", "Category", "ExpectedPrice", "Priority", "Status", "CompanyResponse", "FinalPrice", "RespondedAt", "ExpectedDeliveryDate", "ActualDeliveryDate", "Notes", "CreatedAt" } },
-            { "CompanyMedicines", new List<string> { "Id", "CompanyId", "MedicineName", "Category", "Description", "ImagePath", "UnitPrice", "StockQuantity", "MinimumOrderQuantity", "ProductionDate", "ExpiryDate", "IsAvailable", "CreatedAt", "UpdatedAt" } }
+            { "PharmacyOrders", new List<string> { "Id", "PharmacyId", "Status", "CompanyResponse", "RespondedAt", "ExpectedDeliveryDate", "ActualDeliveryDate", "Priority", "Notes", "CreatedAt" } },
+            { "PharmacyOrderItems", new List<string> { "Id", "PharmacyOrderId", "CompanyMedicineId", "MedicineName", "Quantity", "UnitPrice", "Note" } },
+            { "PatientOrders", new List<string> { "Id", "PatientId", "PharmacyId", "Status", "PaymentMethod", "DeliveryMethod", "DeliveryAddress", "Notes", "CreatedAt", "UpdatedAt" } },
+            { "PatientOrderItems", new List<string> { "Id", "PatientOrderId", "PharmacyInventoryId", "Quantity", "UnitPrice", "MedicineName" } },
+            { "CompanyMedicines", new List<string> { "Id", "CompanyId", "MedicineName", "Category", "Description", "ImagePath", "UnitPrice", "StockQuantity", "MinimumOrderQuantity", "ProductionDate", "ExpiryDate", "IsAvailable", "CreatedAt", "UpdatedAt" } },
+            { "PrescriptionItems", new List<string> { "Id", "PrescriptionId", "MedicineName", "Dosage", "Quantity", "Frequency", "Instructions", "CompanyMedicineId" } }
         };
 
         // Tables to strictly ignore when dropping (System & Identity tables)

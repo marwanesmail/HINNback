@@ -1,9 +1,11 @@
 using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace MyHealthcareApi.Models
 {
     /// <summary>
-    /// طلب أدوية من شركة مصنعة
+    /// طلب أدوية من شركة مصنعة (يدعم أصناف متعددة)
     /// </summary>
     public class PharmacyOrder
     {
@@ -11,7 +13,7 @@ namespace MyHealthcareApi.Models
         public int Id { get; set; }
 
         // ═══════════════════════════════════════════════════════
-        // الصيدلية والشركة
+        // الصيدلية
         // ═══════════════════════════════════════════════════════
 
         /// <summary>
@@ -21,45 +23,18 @@ namespace MyHealthcareApi.Models
         public int PharmacyId { get; set; }
         public virtual Pharmacy Pharmacy { get; set; } = null!;
 
-        /// <summary>
-        /// الشركة المصنعة
-        /// </summary>
-        public int? CompanyId { get; set; }
-        public virtual Company? Company { get; set; }
+        // ملاحظة: تم حذف CompanyId لأن كل صنف مرتبط بشركته الخاصة عبر CompanyMedicine
 
         // ═══════════════════════════════════════════════════════
-        // بيانات الطلب
+        // أصناف الطلب
         // ═══════════════════════════════════════════════════════
 
-        /// <summary>
-        /// اسم الدواء المطلوب
-        /// </summary>
-        [Required, MaxLength(200)]
-        public string MedicineName { get; set; } = null!;
+        public virtual ICollection<PharmacyOrderItem> Items { get; set; } = new List<PharmacyOrderItem>();
 
         /// <summary>
-        /// الكمية المطلوبة
+        /// السعر الإجمالي للطلب بالكامل
         /// </summary>
-        [Required]
-        public int Quantity { get; set; }
-
-        /// <summary>
-        /// الفئة العلاجية (مسكنات، مضادات حيوية، إلخ)
-        /// </summary>
-        [MaxLength(100)]
-        public string? Category { get; set; }
-
-        /// <summary>
-        /// السعر المتوقع للوحدة
-        /// </summary>
-        public decimal? ExpectedPrice { get; set; }
-
-        /// <summary>
-        /// الأولوية
-        /// Normal, Urgent, Low
-        /// </summary>
-        [MaxLength(50)]
-        public string Priority { get; set; } = "Normal";
+        public decimal TotalAmount => Items.Sum(i => i.TotalPrice);
 
         // ═══════════════════════════════════════════════════════
         // حالة الطلب
@@ -68,14 +43,9 @@ namespace MyHealthcareApi.Models
         public OrderStatus Status { get; set; } = OrderStatus.Pending;
 
         /// <summary>
-        /// رد الشركة
+        /// رد الشركة العام (اختياري)
         /// </summary>
         public string? CompanyResponse { get; set; }
-
-        /// <summary>
-        /// السعر الفعلي
-        /// </summary>
-        public decimal? FinalPrice { get; set; }
 
         /// <summary>
         /// وقت الرد
@@ -96,14 +66,10 @@ namespace MyHealthcareApi.Models
         // معلومات إضافية
         // ═══════════════════════════════════════════════════════
 
-        /// <summary>
-        /// ملاحظات
-        /// </summary>
-        public string? Notes { get; set; }
+        [MaxLength(50)]
+        public string Priority { get; set; } = "Normal";
 
-        // ═══════════════════════════════════════════════════════
-        // تواريخ
-        // ═══════════════════════════════════════════════════════
+        public string? Notes { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }

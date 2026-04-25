@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MyHealthcareApi.Data;
 
@@ -11,9 +12,11 @@ using MyHealthcareApi.Data;
 namespace HINN.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260425182700_RevertMultiMedPrescriptions")]
+    partial class RevertMultiMedPrescriptions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -809,91 +812,6 @@ namespace HINN.Migrations
                     b.ToTable("Patients");
                 });
 
-            modelBuilder.Entity("MyHealthcareApi.Models.PatientOrder", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DeliveryAddress")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DeliveryMethod")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PatientId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("PaymentMethod")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("PharmacyId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PatientId");
-
-                    b.HasIndex("PharmacyId");
-
-                    b.HasIndex("Status");
-
-                    b.ToTable("PatientOrders");
-                });
-
-            modelBuilder.Entity("MyHealthcareApi.Models.PatientOrderItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("MedicineName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("PatientOrderId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PharmacyInventoryId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PatientOrderId");
-
-                    b.HasIndex("PharmacyInventoryId");
-
-                    b.ToTable("PatientOrderItems");
-                });
-
             modelBuilder.Entity("MyHealthcareApi.Models.Pharmacy", b =>
                 {
                     b.Property<int>("Id")
@@ -1265,49 +1183,6 @@ namespace HINN.Migrations
                     b.ToTable("Prescriptions");
                 });
 
-            modelBuilder.Entity("MyHealthcareApi.Models.PrescriptionItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("CompanyMedicineId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Dosage")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Frequency")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Instructions")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("MedicineName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("PrescriptionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Quantity")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CompanyMedicineId");
-
-                    b.HasIndex("PrescriptionId");
-
-                    b.ToTable("PrescriptionItems");
-                });
-
             modelBuilder.Entity("MyHealthcareApi.Models.Rating", b =>
                 {
                     b.Property<int>("Id")
@@ -1529,44 +1404,6 @@ namespace HINN.Migrations
                     b.Navigation("AppUser");
                 });
 
-            modelBuilder.Entity("MyHealthcareApi.Models.PatientOrder", b =>
-                {
-                    b.HasOne("MyHealthcareApi.Models.AppUser", "Patient")
-                        .WithMany()
-                        .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MyHealthcareApi.Models.Pharmacy", "Pharmacy")
-                        .WithMany()
-                        .HasForeignKey("PharmacyId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Patient");
-
-                    b.Navigation("Pharmacy");
-                });
-
-            modelBuilder.Entity("MyHealthcareApi.Models.PatientOrderItem", b =>
-                {
-                    b.HasOne("MyHealthcareApi.Models.PatientOrder", "PatientOrder")
-                        .WithMany("Items")
-                        .HasForeignKey("PatientOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MyHealthcareApi.Models.PharmacyInventory", "PharmacyInventory")
-                        .WithMany()
-                        .HasForeignKey("PharmacyInventoryId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("PatientOrder");
-
-                    b.Navigation("PharmacyInventory");
-                });
-
             modelBuilder.Entity("MyHealthcareApi.Models.Pharmacy", b =>
                 {
                     b.HasOne("MyHealthcareApi.Models.AppUser", "AppUser")
@@ -1662,23 +1499,6 @@ namespace HINN.Migrations
                     b.Navigation("Patient");
                 });
 
-            modelBuilder.Entity("MyHealthcareApi.Models.PrescriptionItem", b =>
-                {
-                    b.HasOne("MyHealthcareApi.Models.CompanyMedicine", "CompanyMedicine")
-                        .WithMany()
-                        .HasForeignKey("CompanyMedicineId");
-
-                    b.HasOne("MyHealthcareApi.Models.Prescription", "Prescription")
-                        .WithMany("Items")
-                        .HasForeignKey("PrescriptionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CompanyMedicine");
-
-                    b.Navigation("Prescription");
-                });
-
             modelBuilder.Entity("MyHealthcareApi.Models.Rating", b =>
                 {
                     b.HasOne("MyHealthcareApi.Models.AppUser", "User")
@@ -1688,11 +1508,6 @@ namespace HINN.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("MyHealthcareApi.Models.PatientOrder", b =>
-                {
-                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("MyHealthcareApi.Models.Pharmacy", b =>
@@ -1707,8 +1522,6 @@ namespace HINN.Migrations
 
             modelBuilder.Entity("MyHealthcareApi.Models.Prescription", b =>
                 {
-                    b.Navigation("Items");
-
                     b.Navigation("Responses");
                 });
 #pragma warning restore 612, 618

@@ -1,3 +1,4 @@
+// Testing edit
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MyHealthcareApi.Models;
@@ -24,7 +25,11 @@ namespace MyHealthcareApi.Data
         public DbSet<PharmacyInventory> PharmacyInventories { get; set; }
         public DbSet<DrugExchange> DrugExchanges { get; set; }
         public DbSet<PharmacyOrder> PharmacyOrders { get; set; }
+        public DbSet<PharmacyOrderItem> PharmacyOrderItems { get; set; }
+        public DbSet<PatientOrder> PatientOrders { get; set; }
+        public DbSet<PatientOrderItem> PatientOrderItems { get; set; }
         public DbSet<CompanyMedicine> CompanyMedicines { get; set; }
+        public DbSet<PrescriptionItem> PrescriptionItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -211,24 +216,29 @@ namespace MyHealthcareApi.Data
                 .HasForeignKey(po => po.PharmacyId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Entity<PharmacyOrder>()
-                .HasOne(po => po.Company)
+            // PharmacyOrderItem relationships
+            builder.Entity<PharmacyOrderItem>()
+                .HasOne(poi => poi.PharmacyOrder)
+                .WithMany(po => po.Items)
+                .HasForeignKey(poi => poi.PharmacyOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<PharmacyOrderItem>()
+                .HasOne(poi => poi.CompanyMedicine)
                 .WithMany()
-                .HasForeignKey(po => po.CompanyId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasForeignKey(poi => poi.CompanyMedicineId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<PharmacyOrderItem>()
+                .Property(poi => poi.UnitPrice)
+                .HasPrecision(18, 2);
 
             // Indexes for PharmacyOrder
             builder.Entity<PharmacyOrder>()
                 .HasIndex(po => po.PharmacyId);
             
             builder.Entity<PharmacyOrder>()
-                .HasIndex(po => po.CompanyId);
-            
-            builder.Entity<PharmacyOrder>()
                 .HasIndex(po => po.Status);
-            
-            builder.Entity<PharmacyOrder>()
-                .HasIndex(po => po.MedicineName);
 
             // CompanyMedicine → Company
             builder.Entity<CompanyMedicine>()
@@ -253,6 +263,57 @@ namespace MyHealthcareApi.Data
 
             builder.Entity<CompanyMedicine>()
                 .HasIndex(cm => cm.Category);
+
+            // PharmacyInventory → CompanyMedicine
+            builder.Entity<PharmacyInventory>()
+                .HasOne(pi => pi.CompanyMedicine)
+                .WithMany()
+                .HasForeignKey(pi => pi.CompanyMedicineId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+
+            // PatientOrder relationships
+            builder.Entity<PatientOrder>()
+                .HasOne(po => po.Patient)
+                .WithMany()
+                .HasForeignKey(po => po.PatientId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<PatientOrder>()
+                .HasOne(po => po.Pharmacy)
+                .WithMany()
+                .HasForeignKey(po => po.PharmacyId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<PatientOrderItem>()
+                .HasOne(poi => poi.PatientOrder)
+                .WithMany(po => po.Items)
+                .HasForeignKey(poi => poi.PatientOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<PatientOrderItem>()
+                .HasOne(poi => poi.PharmacyInventory)
+                .WithMany()
+                .HasForeignKey(poi => poi.PharmacyInventoryId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<PatientOrderItem>()
+                .Property(poi => poi.UnitPrice)
+                .HasPrecision(18, 2);
+
+            builder.Entity<PatientOrder>()
+                .HasIndex(po => po.PatientId);
+            builder.Entity<PatientOrder>()
+                .HasIndex(po => po.PharmacyId);
+            builder.Entity<PatientOrder>()
+                .HasIndex(po => po.Status);
+
+            // Prescription → PrescriptionItems (Cascade)
+            builder.Entity<PrescriptionItem>()
+                .HasOne(pi => pi.Prescription)
+                .WithMany(p => p.Items)
+                .HasForeignKey(pi => pi.PrescriptionId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

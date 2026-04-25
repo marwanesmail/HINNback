@@ -26,48 +26,43 @@ namespace MyHealthcareApi.Controllers
         [HttpGet("search")]
         public async Task<IActionResult> SearchMedicines([FromQuery] string? searchTerm = null, [FromQuery] string? category = null)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null) return Unauthorized();
-
-            var pharmacy = await _context.Pharmacies
-                .FirstOrDefaultAsync(p => p.AppUserId == userId);
-
-            if (pharmacy == null)
-                return NotFound("الصيدلية غير موجودة");
-
-            // البحث في المخزون الحالي
-            var query = _context.PharmacyInventories
-                .Where(i => i.PharmacyId == pharmacy.Id)
+            // البحث الآن يتم في كتالوج الشركات المتاح (CompanyMedicines)
+            var query = _context.CompanyMedicines
+                .Include(cm => cm.Company)
+                .Where(cm => cm.IsAvailable)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(searchTerm))
             {
-                query = query.Where(i => i.MedicineName.Contains(searchTerm));
+                query = query.Where(cm => cm.MedicineName.Contains(searchTerm) || 
+                                         (cm.Company != null && cm.Company.CompanyName.Contains(searchTerm)));
             }
 
             if (!string.IsNullOrEmpty(category))
             {
-                query = query.Where(i => i.Manufacturer != null && i.Manufacturer.Contains(category));
+                query = query.Where(cm => cm.Category == category);
             }
 
-            var inventory = await query
-                .Select(i => new
+            var results = await query
+                .OrderBy(cm => cm.MedicineName)
+                .Select(cm => new
                 {
-                    i.Id,
-                    i.MedicineName,
-                    i.Manufacturer,
-                    i.Quantity,
-                    i.Price,
-                    i.MinimumQuantity,
-                    IsLowStock = i.Quantity <= i.MinimumQuantity
+                    cm.Id,
+                    cm.MedicineName,
+                    CompanyName = cm.Company.CompanyName,
+                    cm.CompanyId,
+                    cm.Category,
+                    cm.UnitPrice,
+                    cm.StockQuantity,
+                    cm.ImagePath,
+                    cm.Description
                 })
                 .ToListAsync();
 
             return Ok(new
             {
-                TotalItems = inventory.Count,
-                LowStockCount = inventory.Count(i => i.IsLowStock),
-                Items = inventory
+                TotalItems = results.Count,
+                Items = results
             });
         }
 
@@ -88,7 +83,9 @@ namespace MyHealthcareApi.Controllers
 
             var query = _context.PharmacyOrders
                 .Where(po => po.PharmacyId == pharmacy.Id)
-                .Include(po => po.Company)
+                .Include(po => po.Items)
+                    .ThenInclude(i => i.CompanyMedicine)
+                        .ThenInclude(cm => cm.Company)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(status))
@@ -109,20 +106,25 @@ namespace MyHealthcareApi.Controllers
                 .Select(po => new
                 {
                     po.Id,
-                    po.MedicineName,
-                    po.Quantity,
-                    po.Category,
-                    po.ExpectedPrice,
                     po.Priority,
-                    CompanyName = po.Company != null ? po.Company.CompanyName : null,
                     Status = po.Status.ToString(),
                     StatusArabic = GetStatusArabic(po.Status),
                     po.CompanyResponse,
-                    po.FinalPrice,
+                    TotalAmount = po.TotalAmount,
                     po.ExpectedDeliveryDate,
                     po.ActualDeliveryDate,
                     po.Notes,
-                    po.CreatedAt
+                    po.CreatedAt,
+                    ItemsCount = po.Items.Count,
+                    Items = po.Items.Select(i => new {
+                        i.Id,
+                        i.MedicineName,
+                        i.Quantity,
+                        i.UnitPrice,
+                        i.TotalPrice,
+                        CompanyName = i.CompanyMedicine?.Company?.CompanyName ?? "غير معروف",
+                        i.Note
+                    }).ToList()
                 })
                 .ToList();
 
@@ -150,29 +152,33 @@ namespace MyHealthcareApi.Controllers
             if (pharmacy == null)
                 return NotFound("الصيدلية غير موجودة");
 
-            Company? company = null;
-            if (dto.CompanyId.HasValue)
-            {
-                company = await _context.Companies
-                    .FirstOrDefaultAsync(c => c.Id == dto.CompanyId.Value);
-
-                if (company == null)
-                    return NotFound("الشركة غير موجودة");
-            }
+            if (dto.Items == null || !dto.Items.Any())
+                return BadRequest("يجب إضافة صنف واحد على الأقل للطلب");
 
             var order = new PharmacyOrder
             {
                 PharmacyId = pharmacy.Id,
-                CompanyId = dto.CompanyId,
-                MedicineName = dto.MedicineName,
-                Quantity = dto.Quantity,
-                Category = dto.Category,
-                ExpectedPrice = dto.ExpectedPrice,
                 Priority = dto.Priority ?? "Normal",
                 Notes = dto.Notes,
                 Status = OrderStatus.Pending,
                 CreatedAt = DateTime.UtcNow
             };
+
+            foreach (var itemDto in dto.Items)
+            {
+                var medicine = await _context.CompanyMedicines.FindAsync(itemDto.CompanyMedicineId);
+                if (medicine == null)
+                    return BadRequest($"الدواء المعرف بـ {itemDto.CompanyMedicineId} غير موجود");
+
+                order.Items.Add(new PharmacyOrderItem
+                {
+                    CompanyMedicineId = medicine.Id,
+                    MedicineName = medicine.MedicineName,
+                    Quantity = itemDto.Quantity,
+                    UnitPrice = medicine.UnitPrice,
+                    Note = itemDto.Note
+                });
+            }
 
             _context.PharmacyOrders.Add(order);
             await _context.SaveChangesAsync();
@@ -180,7 +186,8 @@ namespace MyHealthcareApi.Controllers
             return Ok(new 
             { 
                 Message = "تم إرسال الطلب بنجاح",
-                OrderId = order.Id
+                OrderId = order.Id,
+                TotalAmount = order.TotalAmount
             });
         }
 
@@ -235,22 +242,19 @@ namespace MyHealthcareApi.Controllers
     // DTO لإنشاء طلب
     public class CreateOrderDto
     {
-        public int? CompanyId { get; set; }
+        public string? Priority { get; set; } = "Normal";
+        public string? Notes { get; set; }
+        public List<OrderItemRequestDto> Items { get; set; } = new();
+    }
 
-        [Required, MaxLength(200)]
-        public string MedicineName { get; set; } = null!;
-
+    public class OrderItemRequestDto
+    {
+        [Required]
+        public int CompanyMedicineId { get; set; }
+        
         [Required, Range(1, 100000)]
         public int Quantity { get; set; }
 
-        [MaxLength(100)]
-        public string? Category { get; set; }
-
-        public decimal? ExpectedPrice { get; set; }
-
-        [MaxLength(50)]
-        public string? Priority { get; set; } = "Normal";
-
-        public string? Notes { get; set; }
+        public string? Note { get; set; }
     }
 }

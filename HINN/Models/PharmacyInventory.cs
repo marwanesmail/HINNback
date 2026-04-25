@@ -27,6 +27,12 @@ namespace MyHealthcareApi.Models
         public string MedicineName { get; set; } = null!;
 
         /// <summary>
+        /// الربط مع كتالوج الشركة (اختياري)
+        /// </summary>
+        public int? CompanyMedicineId { get; set; }
+        public virtual CompanyMedicine? CompanyMedicine { get; set; }
+
+        /// <summary>
         /// الكمية المتوفرة (عدد العلب)
         /// </summary>
         [Required]
