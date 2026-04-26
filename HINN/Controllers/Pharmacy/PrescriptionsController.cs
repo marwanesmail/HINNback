@@ -38,7 +38,9 @@ namespace MyHealthcareApi.Controllers
             var query = _context.Prescriptions
                 .Include(p => p.Doctor)
                 .Include(p => p.Patient)
-                .Where(p => p.DoctorId != null) // روشتات من دكاترة فقط
+                .Include(p => p.Items)
+                .Include(p => p.Responses) // لضمان جلب السعر
+                .Where(p => p.DoctorId != null)
                 .AsQueryable();
 
             // فلترة حسب الحالة
@@ -52,35 +54,28 @@ namespace MyHealthcareApi.Controllers
 
             var prescriptions = await query
                 .OrderByDescending(p => p.CreatedAt)
-                .Select(p => new
-                {
-                    p.Id,
-                    DoctorName = p.Doctor.FullName,
-                    DoctorSpecialty = _context.Doctors
-                        .Where(d => d.AppUserId == p.DoctorId)
-                        .Select(d => d.Specialty)
-                        .FirstOrDefault(),
-                    PatientName = p.PatientName ?? p.Patient.FullName,
-                    PatientPhone = p.PhoneNumber ?? p.Patient.PhoneNumber,
-                    MedicineTitle = p.Title,
-                    Diagnosis = p.Diagnosis,
-                    VisitDate = p.VisitDate,
-                    PrescriptionType = p.PrescriptionType,
-                    Notes = p.Notes,
-                    Status = p.Status.ToString(),
-                    StatusArabic = p.Status == PrescriptionStatus.Pending ? "في الانتظار" : "تم الرد",
-                    CreatedAt = p.CreatedAt,
-                    PatientPoints = GetPatientPoints(p.PatientId), // نقاط المريض
-                    PatientDiscount = GetPatientDiscount(p.PatientId) // الخصم المتاح
-                })
                 .ToListAsync();
+
+            var result = prescriptions.Select(p => new
+            {
+                id = p.Id,
+                patientName = p.PatientName ?? p.Patient?.FullName,
+                doctorName = (p.Doctor?.FullName?.StartsWith("د. ") == true) ? p.Doctor.FullName : $"د. {p.Doctor?.FullName}",
+                medicines = p.Items.Select(i => $"{i.MedicineName} {i.Dosage}".Trim()).ToList(),
+                status = p.Status.ToString(), // "Pending", "Responded", etc.
+                points = GetPatientPoints(p.PatientId),
+                total = p.Responses?.OrderByDescending(r => r.RespondedAt).FirstOrDefault()?.Price ?? 0,
+                date = (p.VisitDate ?? p.CreatedAt).ToString("yyyy-MM-dd"),
+                phone = p.PhoneNumber ?? p.Patient?.PhoneNumber,
+                notes = p.Notes ?? p.Diagnosis ?? ""
+            }).ToList();
 
             return Ok(new
             {
-                TotalPrescriptions = prescriptions.Count,
-                PendingCount = prescriptions.Count(p => p.Status == "Pending"),
-                RespondedCount = prescriptions.Count(p => p.Status == "Responded"),
-                Prescriptions = prescriptions
+                TotalPrescriptions = result.Count,
+                PendingCount = result.Count(p => p.status == "Pending"),
+                RespondedCount = result.Count(p => p.status == "Responded"),
+                Prescriptions = result
             });
         }
 

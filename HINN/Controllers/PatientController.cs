@@ -23,19 +23,22 @@ namespace MyHealthcareApi.Controllers
         private readonly IHubContext<NotificationsHub> _hubContext;
         private readonly IWebHostEnvironment _env;
         private readonly GeoLocationService _geoService;
+        private readonly INotificationService _notificationService;
 
         public PatientController(
             AppDbContext context,
             UserManager<AppUser> userManager,
             IHubContext<NotificationsHub> hubContext,
             IWebHostEnvironment env,
-            GeoLocationService geoService)
+            GeoLocationService geoService,
+            INotificationService notificationService)
         {
             _context = context;
             _userManager = userManager;
             _hubContext = hubContext;
             _env = env;
             _geoService = geoService;
+            _notificationService = notificationService;
         }
 
         // ═══════════════════════════════════════════════════════
@@ -283,7 +286,19 @@ namespace MyHealthcareApi.Controllers
             _context.Appointments.Add(appointment);
             await _context.SaveChangesAsync();
 
-            // TODO: إرسال إشعار للطبيب لو DoctorId موجود
+            // إرسال إشعار للطبيب
+            if (!string.IsNullOrEmpty(dto.DoctorId))
+            {
+                var patient = await _userManager.FindByIdAsync(patientId);
+                var patientName = patient?.FullName ?? "مريض";
+                await _notificationService.SendNotificationAsync(
+                    userId: dto.DoctorId,
+                    title: "حجز موعد جديد",
+                    message: $"قام {patientName} بحجز موعد يوم {dto.AppointmentDate:yyyy-MM-dd} الساعة {dto.AppointmentTime:hh\\:mm}",
+                    type: "Appointment",
+                    relatedEntityId: appointment.Id.ToString()
+                );
+            }
 
             return Ok(new 
             { 
@@ -681,7 +696,16 @@ namespace MyHealthcareApi.Controllers
             _context.Appointments.Add(appointment);
             await _context.SaveChangesAsync();
 
-            // TODO: إرسال إشعار للدكتور بالحجز
+            // إرسال إشعار للدكتور بالحجز
+            var patient = await _userManager.FindByIdAsync(patientId);
+            var patientName = patient?.FullName ?? "مريض";
+            await _notificationService.SendNotificationAsync(
+                userId: availability.DoctorId,
+                title: "حجز موعد جديد",
+                message: $"قام {patientName} بحجز موعد يوم {availability.Date:yyyy-MM-dd} الساعة {availability.StartTime:hh\\:mm}",
+                type: "Appointment",
+                relatedEntityId: appointment.Id.ToString()
+            );
 
             return Ok(new 
             { 

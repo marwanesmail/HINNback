@@ -77,8 +77,8 @@ const PharmacyDashboardPage = () => {
       location: { lat: 30.0444, lng: 31.2357 },
       distance: "0.5 كم",
       requestTime: "منذ 10 دقائق",
-      status: "pending", // pending, accepted, declined
-      alternativeOption: "nearest",
+      status: "pending", // pending, accepted, declined, completed
+      alternativePreference: "SearchAlternative",
     },
     {
       id: 2,
@@ -91,8 +91,8 @@ const PharmacyDashboardPage = () => {
       location: { lat: 30.05, lng: 31.24 },
       distance: "1.2 كم",
       requestTime: "منذ 25 دقيقة",
-      status: "pending",
-      alternativeOption: "nearest",
+      status: "accepted",
+      alternativePreference: "CompleteWithoutMissing",
     },
     {
       id: 3,
@@ -102,8 +102,8 @@ const PharmacyDashboardPage = () => {
       location: { lat: 30.04, lng: 31.23 },
       distance: "0.8 كم",
       requestTime: "منذ 5 دقائق",
-      status: "accepted",
-      alternativeOption: "nearest",
+      status: "completed",
+      alternativePreference: "PhoneConsultation",
     },
   ]);
 

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HINN")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c10450e9885f42730579d84293badf8b632b6492")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4b303d73977637a8ecea6c758a85922b88e27429")]
 [assembly: System.Reflection.AssemblyProductAttribute("HINN")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HINN")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

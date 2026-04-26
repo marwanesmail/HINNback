@@ -30,6 +30,7 @@ namespace MyHealthcareApi.Data
         public DbSet<PatientOrderItem> PatientOrderItems { get; set; }
         public DbSet<CompanyMedicine> CompanyMedicines { get; set; }
         public DbSet<PrescriptionItem> PrescriptionItems { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -314,6 +315,20 @@ namespace MyHealthcareApi.Data
                 .WithMany(p => p.Items)
                 .HasForeignKey(pi => pi.PrescriptionId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Notification → User
+            builder.Entity<Notification>()
+                .HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Indexes for Notification
+            builder.Entity<Notification>()
+                .HasIndex(n => n.UserId);
+            
+            builder.Entity<Notification>()
+                .HasIndex(n => new { n.UserId, n.IsRead });
         }
     }
 }

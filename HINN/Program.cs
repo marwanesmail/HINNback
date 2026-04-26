@@ -97,6 +97,7 @@ builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 var app = builder.Build();
 
@@ -146,6 +147,7 @@ using (var scope = app.Services.CreateScope())
     app.UseSwagger();
     app.UseSwaggerUI();
 
+app.UseStaticFiles(); // Added to serve images and static files from wwwroot
 
 app.UseHttpsRedirection();
 app.UseAuthentication();

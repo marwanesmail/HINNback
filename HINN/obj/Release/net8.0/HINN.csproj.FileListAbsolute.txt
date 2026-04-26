@@ -196,10 +196,10 @@ D:\final project\HINN\HINN\obj\Release\net8.0\staticwebassets.build.json
 D:\final project\HINN\HINN\obj\Release\net8.0\staticwebassets.build.json.cache
 D:\final project\HINN\HINN\obj\Release\net8.0\staticwebassets.development.json
 D:\final project\HINN\HINN\obj\Release\net8.0\staticwebassets.build.endpoints.json
-D:\final project\HINN\HINN\obj\Release\net8.0\staticwebassets.upToDateCheck.txt
 D:\final project\HINN\HINN\obj\Release\net8.0\HINN.csproj.Up2Date
 D:\final project\HINN\HINN\obj\Release\net8.0\HINN.dll
 D:\final project\HINN\HINN\obj\Release\net8.0\refint\HINN.dll
 D:\final project\HINN\HINN\obj\Release\net8.0\HINN.pdb
 D:\final project\HINN\HINN\obj\Release\net8.0\HINN.genruntimeconfig.cache
 D:\final project\HINN\HINN\obj\Release\net8.0\ref\HINN.dll
+D:\final project\HINN\HINN\obj\Release\net8.0\staticwebassets.upToDateCheck.txt
