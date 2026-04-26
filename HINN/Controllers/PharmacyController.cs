@@ -228,7 +228,7 @@ namespace MyHealthcareApi.Controllers
 
         //  عرض كل الردود المخزنة (للإدارة)
         [HttpGet("responses")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Pharmacy")]
         public async Task<IActionResult> GetAllResponses()
         {
             var responses = await _context.PharmacyResponses

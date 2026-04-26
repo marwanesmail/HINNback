@@ -11,6 +11,8 @@ namespace MyHealthcareApi.Services
     {
         Task SendEmailAsync(string email, string subject, string message);
         Task SendWelcomeEmailAsync(string email, string userName);
+        Task SendActivationEmailAsync(string email, string activationLink);
+        Task SendPendingApprovalEmailAsync(string email, string entityType);
         Task SendPasswordResetEmailAsync(string email, string resetLink);
         Task SendApprovalNotificationAsync(string email, string entityType);
         Task SendPrescriptionNotificationAsync(string email, string prescriptionTitle);
@@ -83,6 +85,68 @@ namespace MyHealthcareApi.Services
                     
                     <p style='color: #666;'>فريق HINN للرعاية الصحية</p>
                     <p style='font-size: 12px; color: #999;'>هذا بريد إلكتروني تلقائي، يرجى عدم الرد عليه.</p>
+                </body>
+                </html>
+            ";
+
+            await SendEmailAsync(email, subject, message);
+        }
+
+        /// إرسال بريد تفعيل الحساب
+        public async Task SendActivationEmailAsync(string email, string activationLink)
+        {
+            const string subject = "تفعيل حسابك - HINN";
+            
+            var message = $@"
+                <html>
+                <body style='font-family: Arial, sans-serif; direction: rtl; text-align: right;'>
+                    <h2 style='color: #2E86AB;'>تفعيل الحساب 🔐</h2>
+                    
+                    <p>مرحباً بك! يرجى تأكيد بريدك الإلكتروني لتفعيل حسابك والبدء في استخدام التطبيق.</p>
+                    
+                    <div style='text-align: center; margin: 30px 0;'>
+                        <a href='{activationLink}' 
+                           style='background-color: #27AE60; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>
+                            تفعيل الحساب
+                        </a>
+                    </div>
+                    
+                    <p style='color: #666; font-size: 14px;'>
+                        ⚠️ إذا لم تقم بإنشاء حساب لدينا، يرجى تجاهل هذا البريد.
+                    </p>
+                </body>
+                </html>
+            ";
+
+            await SendEmailAsync(email, subject, message);
+        }
+
+        /// إرسال إشعار قيد المراجعة (الدكاترة والصيدليات والشركات)
+        public async Task SendPendingApprovalEmailAsync(string email, string entityType)
+        {
+            string entityNameAr = entityType switch
+            {
+                "Pharmacy" => "الصيدلية",
+                "Doctor" => "حساب الطبيب",
+                "Company" => "الشركة",
+                _ => "حسابك"
+            };
+
+            const string subject = "حسابك قيد المراجعة - HINN";
+            
+            var message = $@"
+                <html>
+                <body style='font-family: Arial, sans-serif; direction: rtl; text-align: right;'>
+                    <h2 style='color: #F39C12;'>مرحباً بك! حسابك قيد المراجعة ⏳</h2>
+                    
+                    <p>نشكرك على تسجيل {entityNameAr} في منصة HINN.</p>
+                    
+                    <div style='background-color: #fff8e1; padding: 15px; border-radius: 8px; margin: 20px 0;'>
+                        <p>حالياً، يقوم فريقنا بمراجعة طلبك والبيانات المرفقة لضمان الجودة والأمان.</p>
+                        <p>سنرسل لك بريداً إلكترونياً آخر فور الموافقة على حسابك لتبدأ في تقديم خدماتك.</p>
+                    </div>
+                    
+                    <p style='color: #666;'>فريق HINN للرعاية الصحية</p>
                 </body>
                 </html>
             ";

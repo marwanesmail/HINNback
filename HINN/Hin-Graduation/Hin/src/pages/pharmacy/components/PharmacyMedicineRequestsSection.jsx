@@ -239,19 +239,20 @@ const PharmacyMedicineRequestsSection = ({
                           </div>
                         </div>
 
-                        <div className="flex items-center space-x-4 space-x-reverse text-sm">
-                          <span className="text-gray-600">
-                            البديل المفضل:{" "}
-                            <span className="font-medium">
-                              {request.alternativeOption === "nearest"
-                                ? "الأقرب"
-                                : "الأرخص"}
+                        <div className="flex items-center space-x-4 space-x-reverse text-sm mb-4">
+                          <span className="text-gray-600 bg-blue-50 px-3 py-1 rounded-lg">
+                            التفضيل:{" "}
+                            <span className="font-bold text-blue-700">
+                              {request.alternativePreference === "SearchAlternative" && "بحث عن بديل"}
+                              {request.alternativePreference === "CompleteWithoutMissing" && "إكمال بدون ناقص"}
+                              {request.alternativePreference === "PhoneConsultation" && "التواصل الهاتفي"}
+                              {!request.alternativePreference && "التواصل الهاتفي"}
                             </span>
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex flex-col space-y-2 mr-6">
+                      <div className="flex flex-col space-y-2 mr-6 min-w-[140px]">
                         {request.status === "pending" && (
                           <>
                             <motion.button
@@ -259,33 +260,41 @@ const PharmacyMedicineRequestsSection = ({
                               onClick={() =>
                                 handleMedicineRequest(request.id, "accepted")
                               }
-                              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm flex items-center"
+                              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm font-medium flex items-center justify-center"
                             >
                               <FaCheck className="ml-1" />
-                              توفر الدواء
+                              قبول الطلب
                             </motion.button>
                             <motion.button
                               whileTap={{ scale: 0.95 }}
                               onClick={() =>
                                 handleMedicineRequest(request.id, "declined")
                               }
-                              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm flex items-center"
+                              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm font-medium flex items-center justify-center"
                             >
                               <FaTimes className="ml-1" />
-                              غير متوفر
+                              رفض الطلب
                             </motion.button>
                           </>
                         )}
+
+                        {(request.status === "accepted" || request.status === "processing") && (
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() =>
+                              handleMedicineRequest(request.id, "completed")
+                            }
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium flex items-center justify-center"
+                          >
+                            <FaCheckCircle className="ml-1" />
+                            تم التحضير
+                          </motion.button>
+                        )}
+
+                        {/* تم حذف زر الاتصال */}
                         <motion.button
                           whileTap={{ scale: 0.95 }}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm flex items-center"
-                        >
-                          <FaPhone className="ml-1" />
-                          اتصال
-                        </motion.button>
-                        <motion.button
-                          whileTap={{ scale: 0.95 }}
-                          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200 text-sm flex items-center"
+                          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200 text-sm font-medium flex items-center justify-center"
                         >
                           <FaMap className="ml-1" />
                           الموقع

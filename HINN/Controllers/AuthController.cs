@@ -60,6 +60,7 @@ namespace MyHealthcareApi.Controllers
                 {
                     UserName = model.Email,
                     Email = model.Email,
+                    PhoneNumber = model.PhoneNumber,
                     UserType = Models.Enums.UserType.Pharmacy
                 };
 
@@ -72,17 +73,23 @@ namespace MyHealthcareApi.Controllers
                     PharmacyName = model.PharmacyName,
                     AppUserId = user.Id,
                     Address = model.Address,
+                    PhoneNumber = model.PhoneNumber,
+                    Phone2 = model.Phone2,
+                    WorkingHours = model.WorkingHours,
+                    DeliveryArea = model.DeliveryArea,
                     IsApproved = false, // الأدمن لازم يوافق
                     LicenseImagePath = model.LicenseImage != null ? await SaveFile(model.LicenseImage) : string.Empty,
-                    TaxDocumentPath = model.TaxDocument != null ? await SaveFile(model.TaxDocument) : string.Empty
+                    TaxDocumentPath = model.TaxDocument != null ? await SaveFile(model.TaxDocument) : string.Empty,
+                    CommercialRecordPath = model.CommercialRecordImage != null ? await SaveFile(model.CommercialRecordImage) : string.Empty
                 };
 
                 _context.Pharmacies.Add(pharmacy);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                // إرسال بريد ترحيبي
-                await _emailService.SendWelcomeEmailAsync(user.Email!, user.FullName ?? model.PharmacyName);
+                // إرسال رسالة: قيد المراجعة
+                await _emailService.SendPendingApprovalEmailAsync(user.Email!, "Pharmacy");
+
                 
                 // Audit Log
                 await _auditService.LogAsync(
@@ -133,6 +140,9 @@ namespace MyHealthcareApi.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
+                // إرسال رسالة: قيد المراجعة
+                await _emailService.SendPendingApprovalEmailAsync(user.Email!, "Doctor");
+
                 return Ok(new { Message = "تم تسجيل الطبيب بنجاح بانتظار موافقة الأدمن" });
             }
             catch (Exception ex)
@@ -172,6 +182,9 @@ namespace MyHealthcareApi.Controllers
                 _context.Companies.Add(company);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                // إرسال رسالة: قيد المراجعة
+                await _emailService.SendPendingApprovalEmailAsync(user.Email!, "Company");
 
                 return Ok(new { Message = "تم تسجيل شركة الأدوية بنجاح بانتظار موافقة الأدمن" });
             }
@@ -230,8 +243,12 @@ namespace MyHealthcareApi.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                // إرسال بريد ترحيبي
-                await _emailService.SendWelcomeEmailAsync(user.Email!, user.FullName);
+                // إرسال رابط تفعيل الحساب
+                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                // الرابط ده هيكون إما للفرونت إند بتاعك أو الباك إند
+                var activationLink = $"https://hinn.runasp.net/api/Auth/confirm-email?email={Uri.EscapeDataString(user.Email!)}&token={Uri.EscapeDataString(token)}";
+                
+                await _emailService.SendActivationEmailAsync(user.Email!, activationLink);
 
                 //  Audit Log
                 await _auditService.LogAsync(
@@ -255,6 +272,40 @@ namespace MyHealthcareApi.Controllers
                 await transaction.RollbackAsync();
                 return StatusCode(500, new { Message = "حدث خطأ أثناء التسجيل", Error = ex.Message });
             }
+        }
+
+        //  إنشاء أدمن (مرة واحدة فقط للإعداد الأولي)
+        [HttpPost("create-admin")]
+        public async Task<IActionResult> CreateAdmin([FromBody] CreateAdminDto model)
+        {
+            // حماية: لازم يبعت secret key صح
+            var adminSecret = _config["AdminSetup:SecretKey"] ?? "HINN_ADMIN_2026";
+            if (model.SecretKey != adminSecret)
+                return Unauthorized(new { Message = "المفتاح السري غير صحيح" });
+
+            // التحقق من إن الأدمن ده مش موجود
+            var existingAdmin = await _userManager.FindByEmailAsync(model.Email);
+            if (existingAdmin != null)
+                return BadRequest(new { Message = "هذا البريد الإلكتروني مسجل بالفعل" });
+
+            var user = new AppUser
+            {
+                UserName = model.Email,
+                Email = model.Email,
+                FullName = model.FullName ?? "Admin",
+                UserType = Models.Enums.UserType.Admin
+            };
+
+            var result = await _userManager.CreateAsync(user, model.Password);
+            if (!result.Succeeded)
+                return BadRequest(new { Message = "فشل إنشاء الحساب", Errors = result.Errors });
+
+            return Ok(new
+            {
+                Message = "تم إنشاء حساب الأدمن بنجاح",
+                Email = user.Email,
+                Id = user.Id
+            });
         }
 
         //  تسجيل دخول عام (لأي مستخدم)
@@ -288,6 +339,11 @@ namespace MyHealthcareApi.Controllers
                         errorMessage: "User not found"
                     );
                     return Unauthorized("المستخدم غير موجود");
+                }
+
+                if (user.UserType == Models.Enums.UserType.Patient && !user.EmailConfirmed)
+                {
+                    return Unauthorized("يرجى تفعيل حسابك من خلال الرابط المرسل إلى بريدك الإلكتروني");
                 }
 
                 var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
@@ -391,6 +447,74 @@ namespace MyHealthcareApi.Controllers
                 await file.CopyToAsync(stream);
             }
             return filePath;
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  إدارة تأكيد البريد وكلمة المرور
+        // ═══════════════════════════════════════════════════════
+
+        //  تأكيد البريد الإلكتروني للمريض
+        [HttpGet("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail([FromQuery] string email, [FromQuery] string token)
+        {
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(token))
+                return BadRequest("البيانات غير مكتملة");
+
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+                return NotFound("المستخدم غير موجود");
+
+            var result = await _userManager.ConfirmEmailAsync(user, token);
+            if (result.Succeeded)
+            {
+                // إرسال رسالة ترحيبية بعد التفعيل
+                await _emailService.SendWelcomeEmailAsync(user.Email!, user.FullName ?? "عزيزي المريض");
+                return Ok(new { Message = "تم تفعيل الحساب بنجاح. يمكنك الآن تسجيل الدخول" });
+            }
+
+            return BadRequest("الرابط غير صالح أو منتهي الصلاحية");
+        }
+
+        //  طلب إعادة تعيين كلمة المرور
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+                return Ok(new { Message = "إذا كان البريد مسجلاً لدينا، ستصلك رسالة الاستعادة" }); // للأمان مش بنقول إن الايميل مش موجود
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            
+            // في التطبيق الحقيقي ده هيكون رابط للـ Frontend، والـ Frontend هو اللي بيبعت الـ Token لـ ResetPassword API
+            var resetLink = $"https://hinn.runasp.net/reset-password?email={Uri.EscapeDataString(user.Email!)}&token={Uri.EscapeDataString(token)}";
+
+            await _emailService.SendPasswordResetEmailAsync(user.Email!, resetLink);
+
+            return Ok(new { Message = "تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني" });
+        }
+
+        //  إعادة تعيين كلمة المرور فعلياً
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+                return BadRequest("طلب غير صالح");
+
+            var result = await _userManager.ResetPasswordAsync(user, dto.Token, dto.NewPassword);
+            if (result.Succeeded)
+            {
+                // Audit Log
+                await _auditService.LogAsync(
+                    user.Id, user.Email!, AuditActionTypes.Update,
+                    description: "Password reset successful",
+                    success: true
+                );
+
+                return Ok(new { Message = "تم تغيير كلمة المرور بنجاح" });
+            }
+
+            return BadRequest(new { Message = "فشل في إعادة تعيين كلمة المرور", Errors = result.Errors });
         }
     }
 }

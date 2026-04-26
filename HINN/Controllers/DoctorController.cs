@@ -328,55 +328,78 @@ namespace MyHealthcareApi.Controllers
         [HttpPost("availability")]
         public async Task<IActionResult> AddAvailability([FromBody] AddAvailabilityDto dto)
         {
-            var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (doctorId == null) return Unauthorized();
-
-            var availabilities = new List<DoctorAvailability>();
-
-            // إنشاء موعد لكل يوم في النطاق
-            var currentDate = dto.StartDate.Date;
-            var endDate = dto.EndDate.Date;
-
-            while (currentDate <= endDate)
+            try 
             {
-                // تخطي الأيام اللي الدكتور مش متاح فيها
-                if (dto.ExcludedDates?.Any(d => d.Date == currentDate.Date) == true)
-                {
-                    currentDate = currentDate.AddDays(1);
-                    continue;
-                }
+                var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (doctorId == null) return Unauthorized();
 
-                // إنشاء مواعد لكل وقت
-                foreach (var timeSlot in dto.TimeSlots)
+                var availabilities = new List<DoctorAvailability>();
+
+                // إنشاء موعد لكل يوم في النطاق
+                var currentDate = dto.StartDate.Date;
+                var endDate = dto.EndDate.Date;
+
+                while (currentDate <= endDate)
                 {
-                    var availability = new DoctorAvailability
+                    // تخطي الأيام اللي الدكتور مش متاح فيها
+                    if (dto.ExcludedDates?.Any(d => d.Date.Date == currentDate.Date) == true)
                     {
-                        DoctorId = doctorId,
-                        Date = currentDate,
-                        StartTime = timeSlot.StartTime,
-                        EndTime = timeSlot.EndTime,
-                        DurationMinutes = dto.DurationMinutes,
-                        ConsultationFee = dto.ConsultationFee,
-                        AppointmentType = dto.AppointmentType ?? "كشف",
-                        Location = dto.Location,
-                        Notes = dto.Notes,
-                        IsAvailable = true
-                    };
+                        currentDate = currentDate.AddDays(1);
+                        continue;
+                    }
 
-                    availabilities.Add(availability);
+                    // إنشاء مواعد لكل وقت
+                    foreach (var timeSlot in dto.TimeSlots)
+                    {
+                        // محاولة تحويل الوقت بشكل مرن
+                        if (!TryParseFlexibleTime(timeSlot.StartTime, out TimeSpan startTime) ||
+                            !TryParseFlexibleTime(timeSlot.EndTime, out TimeSpan endTime))
+                        {
+                            return BadRequest($"صيغة الوقت غير صحيحة: {timeSlot.StartTime} أو {timeSlot.EndTime}. يرجى استخدام صيغة HH:mm أو أرقام الساعات.");
+                        }
+
+                        var availability = new DoctorAvailability
+                        {
+                            DoctorId = doctorId,
+                            Date = currentDate,
+                            StartTime = startTime,
+                            EndTime = endTime,
+                            DurationMinutes = dto.DurationMinutes,
+                            ConsultationFee = dto.ConsultationFee,
+                            AppointmentType = dto.AppointmentType ?? "كشف",
+                            Location = dto.Location,
+                            Notes = dto.Notes,
+                            IsAvailable = true,
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        availabilities.Add(availability);
+                    }
+
+                    currentDate = currentDate.AddDays(1);
                 }
 
-                currentDate = currentDate.AddDays(1);
+                if (availabilities.Count > 0)
+                {
+                    _context.DoctorAvailabilities.AddRange(availabilities);
+                    await _context.SaveChangesAsync();
+                }
+
+                return Ok(new 
+                { 
+                    Message = $"تم إضافة {availabilities.Count} موعد متاح",
+                    Count = availabilities.Count
+                });
             }
-
-            _context.DoctorAvailabilities.AddRange(availabilities);
-            await _context.SaveChangesAsync();
-
-            return Ok(new 
-            { 
-                Message = $"تم إضافة {availabilities.Count} موعد متاح",
-                Count = availabilities.Count
-            });
+            catch (Exception ex)
+            {
+                // إرجاع تفاصيل الخطأ للمساعدة في التصحيح
+                return StatusCode(500, new { 
+                    Error = "حدث خطأ أثناء حفظ المواعيد", 
+                    Details = ex.Message,
+                    InnerException = ex.InnerException?.Message 
+                });
+            }
         }
 
         /// عرض مواعيدي المتاحة
@@ -424,6 +447,31 @@ namespace MyHealthcareApi.Controllers
                 BookedSlots = response.Count(a => !a.IsAvailable),
                 Availabilities = response
             });
+        }
+
+        private bool TryParseFlexibleTime(string timeStr, out TimeSpan result)
+        {
+            result = TimeSpan.Zero;
+            if (string.IsNullOrWhiteSpace(timeStr)) return false;
+
+            // 1. محاولة Parse كـ TimeSpan كامل (02:00:00)
+            if (TimeSpan.TryParse(timeStr, out result)) return true;
+
+            // 2. محاولة Parse كـ DateTime (2:00 PM) ثم استخراج الوقت
+            if (DateTime.TryParse(timeStr, out DateTime dt))
+            {
+                result = dt.TimeOfDay;
+                return true;
+            }
+
+            // 3. محاولة Parse كرقم مجرد (مثلاً "2" تعني الساعة 2 صباحاً)
+            if (int.TryParse(timeStr, out int hour) && hour >= 0 && hour <= 23)
+            {
+                result = new TimeSpan(hour, 0, 0);
+                return true;
+            }
+
+            return false;
         }
     }
 
@@ -542,10 +590,10 @@ namespace MyHealthcareApi.Controllers
     public class TimeSlotDto
     {
         [Required]
-        public TimeSpan StartTime { get; set; }
+        public string StartTime { get; set; } = null!;
 
         [Required]
-        public TimeSpan EndTime { get; set; }
+        public string EndTime { get; set; } = null!;
     }
 
     public class ExcludedDateDto
@@ -570,6 +618,20 @@ namespace MyHealthcareApi.Controllers
         public string AppointmentType { get; set; } = null!;
         public string? Location { get; set; }
         public DateTime? BookedAt { get; set; }
+    }
+
+    public class AddPatientDto
+    {
+        [Required(ErrorMessage = "الاسم الكامل مطلوب")]
+        public string FullName { get; set; } = null!;
+
+        [Required(ErrorMessage = "العمر مطلوب")]
+        [Range(1, 150, ErrorMessage = "العمر يجب أن يكون بين 1 و 150")]
+        public int Age { get; set; }
+
+        [Required(ErrorMessage = "رقم الهاتف مطلوب")]
+        [Phone(ErrorMessage = "رقم الهاتف غير صالح")]
+        public string PhoneNumber { get; set; } = null!;
     }
 }
 
@@ -961,6 +1023,90 @@ namespace MyHealthcareApi.Controllers
         }
 
         // ── E: My Patients ───────────────────────────────────────
+
+        /// <summary>
+        /// Adds a new patient directly from the Doctor's Dashboard.
+        /// </summary>
+        [HttpPost("patients")]
+        public async Task<IActionResult> AddPatient([FromBody] AddPatientDto dto)
+        {
+            var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (doctorId == null) return Unauthorized();
+
+            // تحقق إذا كان هناك مستخدم بهذا الرقم
+            var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == dto.PhoneNumber);
+            
+            string patientAppUserId = string.Empty;
+
+            if (existingUser != null)
+            {
+                if (existingUser.UserType != Models.Enums.UserType.Patient)
+                {
+                    return BadRequest("رقم الهاتف مسجل لحساب ليس مريضاً.");
+                }
+                patientAppUserId = existingUser.Id;
+            }
+            else
+            {
+                // إنشاء مستخدم جديد
+                var newUser = new AppUser
+                {
+                    UserName = dto.PhoneNumber, // Username is the phone number
+                    PhoneNumber = dto.PhoneNumber,
+                    FullName = dto.FullName,
+                    Email = $"{dto.PhoneNumber}@hinn.local", // Dummy email
+                    UserType = Models.Enums.UserType.Patient,
+                    EmailConfirmed = true 
+                };
+
+                // كلمة مرور افتراضية، يمكن إرسالها للمريض لاحقاً في رسالة
+                var result = await _userManager.CreateAsync(newUser, "Hinn@123456");
+                if (!result.Succeeded)
+                {
+                    return BadRequest(result.Errors);
+                }
+
+                patientAppUserId = newUser.Id;
+
+                // إنشاء بروفايل المريض
+                var newPatientProfile = new Patient
+                {
+                    AppUserId = patientAppUserId,
+                    DateOfBirth = DateTime.Today.AddYears(-dto.Age),
+                    PhoneNumber = dto.PhoneNumber
+                };
+
+                _context.Patients.Add(newPatientProfile);
+                await _context.SaveChangesAsync();
+            }
+
+            // لربط المريض بالدكتور، ننشئ له موعد "وهمي" أو مجرد أنه مضاف للقائمة
+            // بما أن علاقة الطبيب بالمريض تعتمد على الحجوزات والروشتات،
+            // يمكننا إنشاء موعد مكتمل فوراً لكي يظهر في القائمة
+            var hasRelationship = await _context.Appointments
+                .AnyAsync(a => a.DoctorId == doctorId && a.PatientId == patientAppUserId);
+
+            if (!hasRelationship)
+            {
+                var newAppointment = new Appointment
+                {
+                    DoctorId = doctorId,
+                    PatientId = patientAppUserId,
+                    AppointmentDate = DateTime.Today,
+                    AppointmentTime = DateTime.Now.TimeOfDay,
+                    Status = AppointmentStatus.Completed,
+                    AppointmentType = "كشف (إضافة يدوية)",
+                    DoctorNotes = "تم إضافته يدوياً بواسطة الطبيب",
+                    CreatedAt = DateTime.UtcNow,
+                    CompletedAt = DateTime.UtcNow
+                };
+
+                _context.Appointments.Add(newAppointment);
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(new { Message = "تم إضافة المريض بنجاح" });
+        }
 
         /// <summary>
         /// Returns all unique patients who had appointments with this doctor.
