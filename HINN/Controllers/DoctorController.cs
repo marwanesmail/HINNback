@@ -74,13 +74,22 @@ namespace MyHealthcareApi.Controllers
                 Longitude = dto.Longitude,
                 SearchRadiusKm = dto.SearchRadiusKm ?? 5,
                 Status = PrescriptionStatus.Pending,
-                CreatedAt = DateTime.UtcNow
+                Items = dto.Items?.Select(i => new PrescriptionItem
+                {
+                    MedicineName = i.MedicineName,
+                    Dosage = i.Dosage,
+                    Quantity = i.Duration,
+                    Frequency = i.Frequency,
+                    Instructions = i.Instructions,
+                    CompanyMedicineId = i.CompanyMedicineId
+                }).ToList() ?? new List<PrescriptionItem>()
             };
 
             _context.Prescriptions.Add(prescription);
             await _context.SaveChangesAsync();
 
-            // TODO: إرسال إشعار للمريض إن فيه روشتة جديدة
+            // إرسال إشعار للمريض إن فيه روشتة جديدة
+            await _hubContext.Clients.User(dto.PatientId).SendAsync("NewPrescriptionAlert", prescription.Id);
 
             return Ok(new
             {
@@ -99,6 +108,7 @@ namespace MyHealthcareApi.Controllers
 
             var query = _context.Prescriptions
                 .Include(p => p.Patient)
+                .Include(p => p.Items)
                 .Where(p => p.DoctorId == doctorId)
                 .AsQueryable();
 
@@ -139,7 +149,16 @@ namespace MyHealthcareApi.Controllers
                 },
                 IsActive = p.IsActive,
                 CreatedAt = p.CreatedAt,
-                ValidityDays = p.ValidityDays
+                ValidityDays = p.ValidityDays,
+                Items = p.Items?.Select(i => new PrescriptionItemDto
+                {
+                    Id = i.Id,
+                    MedicineName = i.MedicineName,
+                    Dosage = i.Dosage,
+                    Duration = i.Quantity,
+                    Frequency = i.Frequency,
+                    Instructions = i.Instructions
+                }).ToList()
             }).ToList();
 
             return Ok(new
@@ -159,6 +178,7 @@ namespace MyHealthcareApi.Controllers
             var prescription = await _context.Prescriptions
                 .Include(p => p.Patient)
                 .Include(p => p.Doctor)
+                .Include(p => p.Items)
                 .Include(p => p.Responses)
                 .FirstOrDefaultAsync(p => p.Id == id && p.DoctorId == doctorId);
 
@@ -192,6 +212,15 @@ namespace MyHealthcareApi.Controllers
                 CreatedAt = prescription.CreatedAt,
                 ValidityDays = prescription.ValidityDays,
                 PharmacyResponsesCount = prescription.Responses?.Count ?? 0,
+                Items = prescription.Items?.Select(i => new PrescriptionItemDto
+                {
+                    Id = i.Id,
+                    MedicineName = i.MedicineName,
+                    Dosage = i.Dosage,
+                    Duration = i.Quantity,
+                    Frequency = i.Frequency,
+                    Instructions = i.Instructions
+                }).ToList(),
                 Responses = prescription.Responses?.Select(r => new PharmacyResponseDto
                 {
                     Id = r.Id,
@@ -497,6 +526,19 @@ namespace MyHealthcareApi.Controllers
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public double? SearchRadiusKm { get; set; } = 5;
+
+        public List<CreatePrescriptionItemDto> Items { get; set; } = new();
+    }
+
+    public class CreatePrescriptionItemDto
+    {
+        [Required, MaxLength(200)]
+        public string MedicineName { get; set; } = null!;
+        public string? Dosage { get; set; }
+        public string? Frequency { get; set; }
+        public string? Duration { get; set; }
+        public string? Instructions { get; set; }
+        public int? CompanyMedicineId { get; set; }
     }
 
     public class UpdatePrescriptionStatusDto
@@ -523,6 +565,18 @@ namespace MyHealthcareApi.Controllers
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
         public int? ValidityDays { get; set; }
+
+        public List<PrescriptionItemDto>? Items { get; set; }
+    }
+
+    public class PrescriptionItemDto
+    {
+        public int Id { get; set; }
+        public string MedicineName { get; set; } = null!;
+        public string? Dosage { get; set; }
+        public string? Frequency { get; set; }
+        public string? Duration { get; set; }
+        public string? Instructions { get; set; }
     }
 
     public class PrescriptionDetailResponseDto
@@ -545,6 +599,7 @@ namespace MyHealthcareApi.Controllers
         public DateTime CreatedAt { get; set; }
         public int? ValidityDays { get; set; }
         public int PharmacyResponsesCount { get; set; }
+        public List<PrescriptionItemDto>? Items { get; set; }
         public List<PharmacyResponseDto>? Responses { get; set; }
     }
 
@@ -1223,5 +1278,6 @@ namespace MyHealthcareApi.Controllers
         };
     }
 }
+
 
 
