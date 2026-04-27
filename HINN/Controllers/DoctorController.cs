@@ -1163,6 +1163,36 @@ namespace MyHealthcareApi.Controllers
             return Ok(new { Message = "تم إضافة المريض بنجاح" });
         }
 
+        // ── F: Medicine Search ───────────────────────────────────
+
+        /// <summary>
+        /// Search for medicines in the CompanyMedicines catalog for prescription writing.
+        /// </summary>
+        [HttpGet("medicines/search")]
+        public async Task<IActionResult> SearchMedicines([FromQuery] string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return BadRequest("يجب إدخال نص للبحث");
+
+            var medicines = await _context.CompanyMedicines
+                .Include(m => m.Company)
+                .Where(m => m.MedicineName.Contains(query) || (m.Description != null && m.Description.Contains(query)))
+                .OrderBy(m => m.MedicineName)
+                .Take(20)
+                .Select(m => new DoctorMedicineSearchResponseDto
+                {
+                    Id = m.Id,
+                    Name = m.MedicineName,
+                    Description = m.Description,
+                    Price = m.UnitPrice,
+                    Category = m.Category,
+                    CompanyName = m.Company.CompanyName
+                })
+                .ToListAsync();
+
+            return Ok(medicines);
+        }
+
         /// <summary>
         /// Returns all unique patients who had appointments with this doctor.
         /// </summary>

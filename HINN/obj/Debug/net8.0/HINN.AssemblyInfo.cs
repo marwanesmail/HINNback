@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HINN")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cd4e9e250278e595f05d78ae1926bf450584def4")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+86a39adcccc86e68191fa2e0241d2648633b984e")]
 [assembly: System.Reflection.AssemblyProductAttribute("HINN")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HINN")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
