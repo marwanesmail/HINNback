@@ -4,6 +4,8 @@ using MyHealthcareApi.DTOs;
 using MyHealthcareApi.Models;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using System.Linq; // عشان الـ .Where() والـ .Select() والـ .Count() يشتغلوا
+using System.Collections.Generic; // عشان لو استخدمت List<string> للفحوصات
 
 namespace MyHealthcareApi.Controllers
 {
@@ -170,57 +172,115 @@ namespace MyHealthcareApi.Controllers
             return Ok(orders);
         }
 
+        // دالة تجيب الـ UserId بتاع الصيدلية من جدول الـ Users
+        private async Task<string?> GetPharmacyUserIdAsync(int pharmacyId)
+        {
+            return await _context.Pharmacies
+                .Where(p => p.Id == pharmacyId)
+                .Select(p => p.AppUserId)
+                .FirstOrDefaultAsync();
+        }
 
-        // معالجة الطلب لطلب معين
+        // دالة بتبني نص الرسالة بالعربي بشكل مرتب
+        private string BuildNotificationMessage(PharmacyOrder order, string actionVerb)
+        {
+            var firstItem = order.Items.FirstOrDefault();
+            string medicineName = firstItem?.CompanyMedicine?.MedicineName ?? "منتجات طبية";
+            string medicineDisplay = order.Items.Count > 1 ? $"{medicineName} وأصناف أخرى" : medicineName;
+
+            // تم [معالجة/إتمام/إلغاء] الطلب رقم (10) الخاص بدواء (أوجمنتين) بنجاح.
+            return "تم " + actionVerb + " الطلب رقم (" + order.Id + ") الخاص بدواء (" + medicineDisplay + ") بنجاح.";
+        }
+
+        // دالة بتضيف التنبيه فعلياً في الداتا بيز
+        private void AddNotification(string userId, string title, string message, string type, int orderId, int pharmacyId, int? companyId)
+        {
+            _context.Notifications.Add(new Notification
+            {
+                UserId = userId,
+                Title = title,
+                Message = message,
+                Type = type,
+                RelatedEntityId = $"Order:{orderId},Pharmacy:{pharmacyId},Company:{companyId}",
+                IsRead = false,
+                CreatedAt = DateTime.Now
+            });
+        }
+
+        // 1. معالجة الطلب
         [HttpPut("process-order/{id}")]
         public async Task<IActionResult> ProcessOrder(int id)
         {
-            var order = await _context.PharmacyOrders.FindAsync(id);
+            var order = await _context.PharmacyOrders.Include(o => o.Items).ThenInclude(i => i.CompanyMedicine).FirstOrDefaultAsync(o => o.Id == id);
             if (order == null) return NotFound();
+
+            // الفحص الكامل 
+            if (order.Status == OrderStatus.Pending) return BadRequest(new { message = "الطلب قيد المعالجة بالفعل." });
+            if (order.Status == OrderStatus.Confirmed) return BadRequest(new { message = "لا يمكن معالجة طلب مكتمل ومسلم." });
+            if (order.Status == OrderStatus.Rejected) return BadRequest(new { message = "لا يمكن معالجة طلب ملغي." });
 
             order.Status = OrderStatus.Pending;
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "الطلب الآن قيد المعالجة" });
-        }
 
-
-        // إتمام الطلب لطلب معين
-        [HttpPut("complete-order/{id}")]
-        public async Task<IActionResult> CompleteOrder(int id)
-        {
-            var order = await _context.PharmacyOrders
-                .Include(o => o.Items)
-                .FirstOrDefaultAsync(o => o.Id == id);
-
-            if (order == null) return NotFound();
-
-            //  تحديث الحالة
-            order.Status = OrderStatus.Confirmed;
-
-            // المخزن
-            foreach (var item in order.Items)
+            string? pharmacyUserId = await GetPharmacyUserIdAsync(order.PharmacyId);
+            if (pharmacyUserId != null)
             {
-                var medicine = await _context.CompanyMedicines.FindAsync(item.CompanyMedicineId);
-                if (medicine != null)
-                {
-                    medicine.StockQuantity -= item.Quantity; // خصم من المخزن
-                }
+                AddNotification(pharmacyUserId, "تحديث: الطلب قيد المعالجة", BuildNotificationMessage(order, "معالجة"), "Processing", order.Id, order.PharmacyId, order.Items.FirstOrDefault()?.CompanyMedicine?.CompanyId);
             }
 
             await _context.SaveChangesAsync();
-            return Ok(new { message = "تم إتمام الطلب بنجاح وخصم الكميات من المخزن" });
+            return Ok(new { message = "تم البدء في المعالجة وإرسال التنبيه." });
+        }
+        // 2. إتمام الطلب (مع فحص المخزن بدقة)
+        [HttpPut("complete-order/{id}")]
+        public async Task<IActionResult> CompleteOrder(int id)
+        {
+            var order = await _context.PharmacyOrders.Include(o => o.Items).ThenInclude(i => i.CompanyMedicine).FirstOrDefaultAsync(o => o.Id == id);
+            if (order == null) return NotFound();
+
+            if (order.Status == OrderStatus.Confirmed) return BadRequest(new { message = "الطلب مكتمل بالفعل." });
+            if (order.Status == OrderStatus.Rejected) return BadRequest(new { message = "لا يمكن إتمام طلب ملغي." });
+
+            // فحص المخزن والخصم (الـ Logic القديم بتاعك)
+            foreach (var item in order.Items)
+            {
+                var medicine = await _context.CompanyMedicines.FindAsync(item.CompanyMedicineId);
+                if (medicine == null || medicine.StockQuantity < item.Quantity)
+                    return BadRequest(new { message = "عجز في مخزون دواء " + medicine?.MedicineName });
+                medicine.StockQuantity -= item.Quantity;
+            }
+
+            order.Status = OrderStatus.Confirmed;
+
+            string? pharmacyUserId = await GetPharmacyUserIdAsync(order.PharmacyId);
+            if (pharmacyUserId != null)
+            {
+                AddNotification(pharmacyUserId, "مبروك: تم قبول طلبك", BuildNotificationMessage(order, "إتمام"), "Success", order.Id, order.PharmacyId, order.Items.FirstOrDefault()?.CompanyMedicine?.CompanyId);
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "تم الإتمام وخصم المخزن وإرسال التنبيه." });
         }
 
-        //إلغاء الطلب لطلب معين
+        // 3. إلغاء الطلب
         [HttpPut("cancel-order/{id}")]
         public async Task<IActionResult> CancelOrder(int id)
         {
-            var order = await _context.PharmacyOrders.FindAsync(id);
+            var order = await _context.PharmacyOrders.Include(o => o.Items).ThenInclude(i => i.CompanyMedicine).FirstOrDefaultAsync(o => o.Id == id);
             if (order == null) return NotFound();
 
+            if (order.Status == OrderStatus.Confirmed) return BadRequest(new { message = "لا يمكن إلغاء طلب تم إتمامه وتسليمه." });
+            if (order.Status == OrderStatus.Rejected) return BadRequest(new { message = "الطلب ملغي بالفعل." });
+
             order.Status = OrderStatus.Rejected;
+
+            string? pharmacyUserId = await GetPharmacyUserIdAsync(order.PharmacyId);
+            if (pharmacyUserId != null)
+            {
+                AddNotification(pharmacyUserId, "تنبيه: تم رفض الطلب", BuildNotificationMessage(order, "رفض وإلغاء"), "Danger", order.Id, order.PharmacyId, order.Items.FirstOrDefault()?.CompanyMedicine?.CompanyId);
+            }
+
             await _context.SaveChangesAsync();
-            return Ok(new { message = "تم إلغاء الطلب" });
+            return Ok(new { message = "تم إلغاء الطلب وإخطار الصيدلية." });
         }
 
 
