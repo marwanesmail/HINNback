@@ -80,6 +80,7 @@ namespace MyHealthcareApi.Models
     public enum OrderStatus
     {
         Pending,        // في الانتظار
+        Processing,     // قيد التجهيز
         Confirmed,      // مؤكد
         Shipped,        // تم الشحن
         Delivered,      // تم التسليم
