@@ -7,6 +7,7 @@ using MyHealthcareApi.Data;
 using MyHealthcareApi.Hubs;
 using MyHealthcareApi.Models;
 using MyHealthcareApi.DTOs;
+using MyHealthcareApi.Services;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
@@ -21,17 +22,20 @@ namespace MyHealthcareApi.Controllers
         private readonly UserManager<AppUser> _userManager;
         private readonly IWebHostEnvironment _env;
         private readonly IHubContext<NotificationsHub> _hubContext;
+        private readonly INotificationService _notificationService;
 
         public DoctorController(
             AppDbContext context,
             UserManager<AppUser> userManager,
             IWebHostEnvironment env,
-            IHubContext<NotificationsHub> hubContext)
+            IHubContext<NotificationsHub> hubContext,
+            INotificationService notificationService)
         {
             _context = context;
             _userManager = userManager;
             _env = env;
             _hubContext = hubContext;
+            _notificationService = notificationService;
         }
 
         //  إدارة الروشتات
@@ -88,8 +92,17 @@ namespace MyHealthcareApi.Controllers
             _context.Prescriptions.Add(prescription);
             await _context.SaveChangesAsync();
 
-            // إرسال إشعار للمريض إن فيه روشتة جديدة
+            // إشعار للمريض إن فيه روشتة جديدة (الطريقة القديمة للتوافق)
             await _hubContext.Clients.User(dto.PatientId).SendAsync("NewPrescriptionAlert", prescription.Id);
+
+            // إشعار محفوظ في الداتابيز
+            await _notificationService.SendNotificationAsync(
+                userId: dto.PatientId,
+                title: "روشتة جديدة 📋",
+                message: $"قام طبيبك بكتابة روشتة جديدة لك. يمكنك الآن طلب الأدوية.",
+                type: "NewPrescription",
+                relatedEntityId: prescription.Id.ToString()
+            );
 
             return Ok(new
             {
@@ -250,6 +263,13 @@ namespace MyHealthcareApi.Controllers
             if (prescription == null)
                 return NotFound("الروشتة غير موجودة");
 
+            // ← إضافة Validation لمنع تغيير الحالات المنتهية
+            if (prescription.Status == PrescriptionStatus.Completed || prescription.Status == PrescriptionStatus.Cancelled)
+                return BadRequest(new { message = "لا يمكن تعديل حالة روشتة منتهية (مكتملة أو ملغية)" });
+
+            if (dto.Status == PrescriptionStatus.Pending && prescription.Status != PrescriptionStatus.Pending)
+                return BadRequest(new { message = "لا يمكن إعادة الروشتة لحالة قيد الانتظار" });
+
             prescription.Status = dto.Status;
             await _context.SaveChangesAsync();
 
@@ -302,6 +322,8 @@ namespace MyHealthcareApi.Controllers
                 },
                 PatientId = a.PatientId,
                 PatientName = a.Patient?.FullName ?? "غير معروف",
+                PatientPhone = a.Patient?.PhoneNumber, // ←
+                PatientEmail = a.Patient?.Email,       // ←
                 PatientNotes = a.PatientNotes,
                 DoctorNotes = a.DoctorNotes,
                 Diagnosis = a.Diagnosis,
@@ -945,6 +967,14 @@ namespace MyHealthcareApi.Controllers
             await _hubContext.Clients.User(appt.PatientId)
                 .SendAsync("AppointmentConfirmed", new { AppointmentId = id });
 
+            await _notificationService.SendNotificationAsync(
+                userId: appt.PatientId,
+                title: "تأكيد الموعد ✅",
+                message: $"تم تأكيد موعدك مع الطبيب يوم {appt.AppointmentDate:yyyy-MM-dd} الساعة {appt.AppointmentTime:hh\\:mm}.",
+                type: "AppointmentConfirmed",
+                relatedEntityId: appt.Id.ToString()
+            );
+
             return Ok(new { Message = "تم تأكيد الموعد بنجاح", Status = "confirmed" });
         }
 
@@ -971,6 +1001,14 @@ namespace MyHealthcareApi.Controllers
 
             await _hubContext.Clients.User(appt.PatientId)
                 .SendAsync("AppointmentCompleted", new { AppointmentId = id });
+
+            await _notificationService.SendNotificationAsync(
+                userId: appt.PatientId,
+                title: "موعد مكتمل 🌟",
+                message: $"نأمل لك الشفاء العاجل! تم إنهاء الموعد بنجاح.",
+                type: "AppointmentCompleted",
+                relatedEntityId: appt.Id.ToString()
+            );
 
             return Ok(new { Message = "تم تسجيل الموعد كمكتمل", Status = "completed" });
         }
@@ -999,6 +1037,14 @@ namespace MyHealthcareApi.Controllers
 
             await _hubContext.Clients.User(appt.PatientId)
                 .SendAsync("AppointmentCancelled", new { AppointmentId = id, Reason = dto.CancellationReason });
+
+            await _notificationService.SendNotificationAsync(
+                userId: appt.PatientId,
+                title: "إلغاء موعد ❌",
+                message: $"نعتذر، تم إلغاء موعدك. السبب: {dto.CancellationReason ?? "غير محدد"}.",
+                type: "AppointmentCancelled",
+                relatedEntityId: appt.Id.ToString()
+            );
 
             return Ok(new { Message = "تم إلغاء الموعد", Status = "cancelled" });
         }

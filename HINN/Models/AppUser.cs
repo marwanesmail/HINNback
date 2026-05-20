@@ -14,6 +14,7 @@ namespace MyHealthcareApi.Models
         public bool IsApproved { get; set; } = false;
         public string? ProfileImageUrl { get; set; }
         public Enums.UserType UserType { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // ═══════════════════════════════════════════════════════════
         // حقول الشهرة (للترتيب في البحث)

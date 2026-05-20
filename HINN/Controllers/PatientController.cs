@@ -213,22 +213,15 @@ namespace MyHealthcareApi.Controllers
                     .Length;
             }
 
-            // المواعيد القادمة (لو Appointment Model موجود)
-            var upcomingAppointments = 0;
-            var completedVisits = 0;
-            var cancelledAppointments = 0;
+            // ← إحصائيات المواعيد الحقيقية من جدول Appointments
+            var upcomingAppointments = await _context.Appointments
+                .CountAsync(a => a.PatientId == userId && a.Status == AppointmentStatus.Upcoming);
 
-            // TODO: Uncomment when Appointment Model is added
-            // upcomingAppointments = await _context.Appointments
-            //     .CountAsync(a => a.PatientId == userId && a.Status == AppointmentStatus.Upcoming);
-            // completedVisits = await _context.Appointments
-            //     .CountAsync(a => a.PatientId == userId && a.Status == AppointmentStatus.Completed);
-            // cancelledAppointments = await _context.Appointments
-            //     .CountAsync(a => a.PatientId == userId && a.Status == AppointmentStatus.Cancelled);
+            var completedVisits = await _context.Appointments
+                .CountAsync(a => a.PatientId == userId && a.Status == AppointmentStatus.Completed);
 
-            // حساب الزيارات المكتملة من الروشتات
-            completedVisits = await _context.Prescriptions
-                .CountAsync(p => p.PatientId == userId && p.Status == PrescriptionStatus.Completed);
+            var cancelledAppointments = await _context.Appointments
+                .CountAsync(a => a.PatientId == userId && a.Status == AppointmentStatus.Cancelled);
 
             // ═══════════════════════════════════════════════════════
             // تجميع البيانات
@@ -357,9 +350,14 @@ namespace MyHealthcareApi.Controllers
                     },
                     DoctorId = a.DoctorId,
                     DoctorName = a.Doctor?.FullName,
-                    DoctorSpecialty = a.Doctor != null ? "طبيب عام" : null, // TODO: Get from Doctor model
+                    DoctorSpecialty = _context.Doctors
+                        .Where(d => d.AppUserId == a.DoctorId)
+                        .Select(d => d.Specialty)
+                        .FirstOrDefault(), // ← التخصص الحقيقي من جدول Doctors
                     PatientId = a.PatientId,
                     PatientName = a.Patient?.FullName ?? string.Empty,
+                    PatientPhone = a.Patient?.PhoneNumber, // ←
+                    PatientEmail = a.Patient?.Email,       // ←
                     PatientNotes = a.PatientNotes,
                     DoctorNotes = a.DoctorNotes,
                     Diagnosis = a.Diagnosis,
@@ -413,9 +411,14 @@ namespace MyHealthcareApi.Controllers
                 },
                 DoctorId = appointment.DoctorId,
                 DoctorName = appointment.Doctor?.FullName,
-                DoctorSpecialty = appointment.Doctor != null ? "طبيب عام" : null,
+                DoctorSpecialty = _context.Doctors
+                    .Where(d => d.AppUserId == appointment.DoctorId)
+                    .Select(d => d.Specialty)
+                    .FirstOrDefault(), // ← التخصص الحقيقي
                 PatientId = appointment.PatientId,
                 PatientName = appointment.Patient?.FullName ?? string.Empty,
+                PatientPhone = appointment.Patient?.PhoneNumber, // ←
+                PatientEmail = appointment.Patient?.Email,       // ←
                 PatientNotes = appointment.PatientNotes,
                 DoctorNotes = appointment.DoctorNotes,
                 Diagnosis = appointment.Diagnosis,
@@ -794,6 +797,7 @@ namespace MyHealthcareApi.Controllers
             
             foreach (var pharmacy in nearbyPharmacies)
             {
+                // الإشعار القديم الخاص بالفرونت إند (ممكن يكون بيعتمد عليه)
                 await _hubContext.Clients
                     .Group(NotificationsHub.GetPharmacyGroup(pharmacy.Id))
                     .SendAsync("NewPrescriptionRequest", new
@@ -803,6 +807,15 @@ namespace MyHealthcareApi.Controllers
                         PatientLocation = new { dto.Latitude, dto.Longitude },
                         Distance = _geoService.CalculateDistance(pharmacy.Latitude, pharmacy.Longitude, dto.Latitude, dto.Longitude)
                     });
+
+                // حفظ الإشعار في الداتابيز وإرساله بالطريقة الموحدة
+                await _notificationService.SendNotificationAsync(
+                    userId: pharmacy.AppUserId,
+                    title: "طلب دواء جديد 💊",
+                    message: $"يوجد طلب دواء جديد بالقرب منك: {dto.MedicineName}",
+                    type: "MedicineRequest",
+                    relatedEntityId: prescription.Id.ToString()
+                );
             }
 
             return Ok(new
@@ -889,7 +902,7 @@ namespace MyHealthcareApi.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            // إشعار للصيدلية إن المريض اختارها
+            // إشعار للصيدلية إن المريض اختارها (بالطريقة القديمة للحفاظ على التوافق)
             await _hubContext.Clients
                 .Group(NotificationsHub.GetPharmacyGroup(response.PharmacyId))
                 .SendAsync("PharmacySelected", new
@@ -898,6 +911,19 @@ namespace MyHealthcareApi.Controllers
                     PatientId = patientId,
                     Message = "المريض اختار صيدليتك للطلب"
                 });
+
+            // إشعار محفوظ في الداتابيز
+            var pharmacy = await _context.Pharmacies.FindAsync(response.PharmacyId);
+            if (pharmacy != null)
+            {
+                await _notificationService.SendNotificationAsync(
+                    userId: pharmacy.AppUserId,
+                    title: "تم اختيار صيدليتك ✅",
+                    message: "قام مريض باختيار صيدليتك لتحضير الروشتة/الطلب.",
+                    type: "OrderAccepted",
+                    relatedEntityId: response.PrescriptionId.ToString()
+                );
+            }
 
             return Ok(new { Message = "تم اختيار الصيدلية بنجاح" });
         }
@@ -922,6 +948,15 @@ namespace MyHealthcareApi.Controllers
                         PatientLocation = new { prescription.Latitude, prescription.Longitude },
                         Distance = _geoService.CalculateDistance(pharmacy.Latitude, pharmacy.Longitude, prescription.Latitude, prescription.Longitude)
                     });
+
+                // حفظ الإشعار في الداتابيز
+                await _notificationService.SendNotificationAsync(
+                    userId: pharmacy.AppUserId,
+                    title: "طلب دواء جديد 💊",
+                    message: $"يوجد طلب دواء جديد بالقرب منك: {prescription.Title ?? "مرفق صورة روشتة"}",
+                    type: "MedicineRequest",
+                    relatedEntityId: prescription.Id.ToString()
+                );
             }
         }
 

@@ -61,6 +61,8 @@ namespace MyHealthcareApi.DTOs
         // المريض
         public string PatientId { get; set; } = null!;
         public string PatientName { get; set; } = null!;
+        public string? PatientPhone { get; set; } // ← تمت الإضافة
+        public string? PatientEmail { get; set; } // ← تمت الإضافة
         
         // ملاحظات
         public string? PatientNotes { get; set; }

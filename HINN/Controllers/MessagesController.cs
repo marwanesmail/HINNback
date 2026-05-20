@@ -7,6 +7,7 @@ using MyHealthcareApi.DTOs;
 using MyHealthcareApi.Models;
 using System.Security.Claims;
 using Microsoft.AspNetCore.SignalR;
+using MyHealthcareApi.Services;
 
 namespace MyHealthcareApi.Controllers
 {
@@ -18,15 +19,18 @@ namespace MyHealthcareApi.Controllers
         private readonly AppDbContext _db;
         private readonly IMapper _mapper;
         private readonly Microsoft.AspNetCore.SignalR.IHubContext<MyHealthcareApi.Hubs.NotificationsHub> _hubContext;
+        private readonly INotificationService _notificationService;
 
         public MessagesController(
             AppDbContext db, 
             IMapper mapper,
-            Microsoft.AspNetCore.SignalR.IHubContext<MyHealthcareApi.Hubs.NotificationsHub> hubContext)
+            Microsoft.AspNetCore.SignalR.IHubContext<MyHealthcareApi.Hubs.NotificationsHub> hubContext,
+            INotificationService notificationService)
         {
             _db = db;
             _mapper = mapper;
             _hubContext = hubContext;
+            _notificationService = notificationService;
         }
 
         [HttpPost]
@@ -51,13 +55,25 @@ namespace MyHealthcareApi.Controllers
             _db.Messages.Add(msg);
             await _db.SaveChangesAsync();
 
-            // Real-time notification via SignalR
+            // Real-time notification via SignalR (الخاصة بشاشة الشات)
             await _hubContext.Clients.User(dto.ReceiverId).SendAsync("ReceiveMessage", new 
             {
                 SenderId = senderId,
                 Content = dto.Content,
                 SentAt = msg.SentAt
             });
+
+            // إرسال إشعار عام للنظام (عشان يظهر في قائمة الإشعارات)
+            var sender = await _db.Users.FindAsync(senderId);
+            var senderName = sender?.FullName ?? "مستخدم";
+            
+            await _notificationService.SendNotificationAsync(
+                userId: dto.ReceiverId,
+                title: "رسالة جديدة 💬",
+                message: $"رسالة جديدة من {senderName}",
+                type: "NewMessage",
+                relatedEntityId: senderId
+            );
 
             return Ok(_mapper.Map<MessageDto>(msg));
         }

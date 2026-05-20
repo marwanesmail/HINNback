@@ -14,7 +14,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services
 builder.Services.AddControllers()
-    .AddNewtonsoftJson(opt => opt.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+    .AddNewtonsoftJson(opt =>
+    {
+        opt.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+        // ← توحيد الـ Response: كل الـ fields هتبقى camelCase تلقائياً
+        opt.SerializerSettings.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
+    });
 
 builder.Services.AddSignalR();
 
@@ -98,64 +103,80 @@ builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IEmailValidationService, EmailValidationService>();
 
-var app = builder.Build();
-
-//  إنشاء الأدوار الأساسية مرة واحدة فقط
-using (var scope = app.Services.CreateScope())
+try
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    // db.Database.Migrate();
+    var app = builder.Build();
 
-    if (args.Contains("--sync-db"))
+    //  إنشاء الأدوار الأساسية مرة واحدة فقط
+    using (var scope = app.Services.CreateScope())
     {
-        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-        if (connectionString != null)
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        db.Database.Migrate();
+
+        if (args.Contains("--sync-db"))
         {
-            // Only actually modify the DB if --execute is also passed
-            bool executeChanges = args.Contains("--execute");
-            await MyHealthcareApi.Setup.SyncDatabaseSchemaAsync(connectionString, executeChanges);
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            if (connectionString != null)
+            {
+                // Only actually modify the DB if --execute is also passed
+                bool executeChanges = args.Contains("--execute");
+                await MyHealthcareApi.Setup.SyncDatabaseSchemaAsync(connectionString, executeChanges);
+            }
+            
+            Console.WriteLine("Exiting setup mode...");
+            return; // Stops the API from booting up
         }
-        
-        Console.WriteLine("Exiting setup mode...");
-        return; // Stops the API from booting up
-    }
 
-    app.MapGet("/", () => "API is running");
+        app.MapGet("/", () => "API is running");
 
 
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-    foreach (var role in UserRoles.All)
-        if (!await roleManager.RoleExistsAsync(role))
-            await roleManager.CreateAsync(new IdentityRole(role));
+        foreach (var role in UserRoles.All)
+            if (!await roleManager.RoleExistsAsync(role))
+                await roleManager.CreateAsync(new IdentityRole(role));
 
-    // إنشاء حساب أدمن افتراضي
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
-    string adminEmail = "admin@hinn.com";
-    if (await userManager.FindByEmailAsync(adminEmail) == null)
-    {
-        var adminUser = new AppUser { UserName = adminEmail, Email = adminEmail, FullName = "System Admin", UserType = MyHealthcareApi.Models.Enums.UserType.Admin };
-        var result = await userManager.CreateAsync(adminUser, "Admin@123");
-        if (result.Succeeded)
+        // إنشاء حساب أدمن افتراضي
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+        string adminEmail = "marwnlsmail@gmail.com";
+        if (await userManager.FindByEmailAsync(adminEmail) == null)
         {
-            await userManager.AddToRoleAsync(adminUser, "Admin");
+            var adminUser = new AppUser { UserName = adminEmail, Email = adminEmail, FullName = "System Admin", UserType = MyHealthcareApi.Models.Enums.UserType.Admin };
+            var result = await userManager.CreateAsync(adminUser, "Admin@123");
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(adminUser, "Admin");
+            }
         }
     }
-}
 
     app.UseSwagger();
     app.UseSwaggerUI();
 
-app.UseStaticFiles(); // Added to serve images and static files from wwwroot
+    app.UseStaticFiles(); // Added to serve images and static files from wwwroot
 
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
+    app.UseHttpsRedirection();
+    app.UseAuthentication();
+    app.UseAuthorization();
 
-// تشغيل Hub الإشعارات
-app.MapHub<NotificationsHub>("/hubs/notifications");
+    // تشغيل Hub الإشعارات
+    app.MapHub<NotificationsHub>("/hubs/notifications");
 
-app.MapControllers();
+    app.MapControllers();
 
-app.Run();
+    app.Run();
+}
+catch (Exception ex)
+{
+    // تسجيل الخطأ في ملف نصي في حالة فشل بدء التشغيل (عشان نقدر نعرف السبب الحقيقي)
+    string errorPath = Path.Combine(AppContext.BaseDirectory, "startup_error.txt");
+    string errorMessage = $"[{DateTime.Now}] CRITICAL STARTUP ERROR:\n{ex.Message}\n{ex.StackTrace}\n";
+    if (ex.InnerException != null)
+    {
+        errorMessage += $"\nINNER EXCEPTION:\n{ex.InnerException.Message}\n{ex.InnerException.StackTrace}";
+    }
+    File.AppendAllText(errorPath, errorMessage);
+    throw;
+}

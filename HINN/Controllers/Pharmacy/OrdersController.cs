@@ -5,6 +5,7 @@ using MyHealthcareApi.Data;
 using MyHealthcareApi.Models;
 using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
+using MyHealthcareApi.Services;
 
 namespace MyHealthcareApi.Controllers
 {
@@ -14,10 +15,12 @@ namespace MyHealthcareApi.Controllers
     public class OrdersController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly INotificationService _notificationService;
 
-        public OrdersController(AppDbContext context)
+        public OrdersController(AppDbContext context, INotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         /// <summary>
@@ -183,6 +186,29 @@ namespace MyHealthcareApi.Controllers
             _context.PharmacyOrders.Add(order);
             await _context.SaveChangesAsync();
 
+            // إرسال إشعار للشركات المعنية بهذا الطلب
+            var medicineIds = order.Items.Select(i => i.CompanyMedicineId).ToList();
+            var companies = await _context.CompanyMedicines
+                .Where(cm => medicineIds.Contains(cm.Id))
+                .Include(cm => cm.Company)
+                .Select(cm => cm.Company)
+                .Distinct()
+                .ToListAsync();
+
+            foreach (var comp in companies)
+            {
+                if (comp != null && !string.IsNullOrEmpty(comp.AppUserId))
+                {
+                    await _notificationService.SendNotificationAsync(
+                        userId: comp.AppUserId,
+                        title: "طلب أدوية جديد 📦",
+                        message: $"قامت صيدلية {pharmacy.PharmacyName} بإنشاء طلب جديد برقم {order.Id}.",
+                        type: "NewPharmacyOrder",
+                        relatedEntityId: order.Id.ToString()
+                    );
+                }
+            }
+
             return Ok(new 
             { 
                 Message = "تم إرسال الطلب بنجاح",
@@ -207,6 +233,7 @@ namespace MyHealthcareApi.Controllers
                 return NotFound("الصيدلية غير موجودة");
 
             var order = await _context.PharmacyOrders
+                .Include(po => po.Items)
                 .FirstOrDefaultAsync(po => po.Id == id && po.PharmacyId == pharmacy.Id);
 
             if (order == null)
@@ -217,6 +244,29 @@ namespace MyHealthcareApi.Controllers
 
             order.Status = OrderStatus.Cancelled;
             await _context.SaveChangesAsync();
+
+            // إرسال إشعار بالإلغاء للشركات المعنية
+            var medicineIds = order.Items.Select(i => i.CompanyMedicineId).ToList();
+            var companies = await _context.CompanyMedicines
+                .Where(cm => medicineIds.Contains(cm.Id))
+                .Include(cm => cm.Company)
+                .Select(cm => cm.Company)
+                .Distinct()
+                .ToListAsync();
+
+            foreach (var comp in companies)
+            {
+                if (comp != null && !string.IsNullOrEmpty(comp.AppUserId))
+                {
+                    await _notificationService.SendNotificationAsync(
+                        userId: comp.AppUserId,
+                        title: "إلغاء طلب أدوية ❌",
+                        message: $"قامت صيدلية {pharmacy.PharmacyName} بإلغاء الطلب رقم {order.Id}.",
+                        type: "PharmacyOrderCancelled",
+                        relatedEntityId: order.Id.ToString()
+                    );
+                }
+            }
 
             return Ok(new { Message = "تم إلغاء الطلب بنجاح" });
         }

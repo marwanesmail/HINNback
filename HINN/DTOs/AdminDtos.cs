@@ -10,6 +10,8 @@ namespace MyHealthcareApi.DTOs
         public string AccountType { get; set; } = string.Empty; // Doctor, Pharmacy, Company
         public string AccountTypeArabic { get; set; } = string.Empty; // طبيب، صيدلية، شركة
         public string Status { get; set; } = "قيد الانتظار";
+        public string Phone { get; set; } = string.Empty; // ← تمت إضافة رقم الهاتف
+        public DateTime CreatedAt { get; set; } // ← تمت إضافة تاريخ الإنشاء
     }
 
     public class AccountDetailsDto

@@ -10,6 +10,7 @@ namespace MyHealthcareApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize] // ← حماية عامة على الكلاس كله
     public class PatientOrdersController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -214,6 +215,21 @@ namespace MyHealthcareApi.Controllers
                     }
                 }
             }
+            // إضافة نقاط للمريض عند التسليم
+            else if (newStatus == PatientOrderStatus.Delivered && order.Status != PatientOrderStatus.Delivered)
+            {
+                var patient = await _context.Users.FindAsync(order.PatientId);
+                if (patient != null)
+                {
+                    // كل 100 جنيه = 1 نقطة
+                    var pointsEarned = (int)(order.TotalAmount / 100);
+                    patient.LoyaltyPoints += pointsEarned;
+                    patient.TotalPurchases += order.TotalAmount;
+                    
+                    // تحديث الخصم (كل نقطة = 1%، حد أقصى 20%)
+                    patient.DiscountPercentage = Math.Min(patient.LoyaltyPoints, 20);
+                }
+            }
 
             order.Status = newStatus;
             order.UpdatedAt = DateTime.UtcNow;
@@ -221,6 +237,32 @@ namespace MyHealthcareApi.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { Message = "تم تحديث حالة الطلب بنجاح", Status = order.Status.ToString() });
+        }
+
+        /// <summary>
+        /// إلغاء طلب من قبل المريض (فقط لو Pending)
+        /// </summary>
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Patient")]
+        public async Task<IActionResult> CancelMyOrder(int id)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            var order = await _context.PatientOrders
+                .FirstOrDefaultAsync(o => o.Id == id && o.PatientId == userId);
+
+            if (order == null)
+                return NotFound(new { message = "الطلب غير موجود" });
+
+            if (order.Status != PatientOrderStatus.Pending)
+                return BadRequest(new { message = "لا يمكن إلغاء طلب تجاوز مرحلة الانتظار" });
+
+            order.Status = PatientOrderStatus.Cancelled;
+            order.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "تم إلغاء الطلب بنجاح" });
         }
     }
 

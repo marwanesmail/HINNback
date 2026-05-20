@@ -7,6 +7,7 @@ using MyHealthcareApi.Data;
 using MyHealthcareApi.Hubs;
 using MyHealthcareApi.Models;
 using MyHealthcareApi.DTOs;
+using MyHealthcareApi.Services;
 using System.Security.Claims;
 
 namespace MyHealthcareApi.Controllers
@@ -20,13 +21,20 @@ namespace MyHealthcareApi.Controllers
         private readonly IHubContext<NotificationsHub> _hubContext;
         private readonly IWebHostEnvironment _env;
         private readonly UserManager<AppUser> _userManager;
+        private readonly INotificationService _notificationService;
 
-        public PharmacyController(AppDbContext context, IHubContext<NotificationsHub> hubContext, IWebHostEnvironment env, UserManager<AppUser> userManager)
+        public PharmacyController(
+            AppDbContext context, 
+            IHubContext<NotificationsHub> hubContext, 
+            IWebHostEnvironment env, 
+            UserManager<AppUser> userManager,
+            INotificationService notificationService)
         {
             _context = context;
             _hubContext = hubContext;
             _env = env;
             _userManager = userManager;
+            _notificationService = notificationService;
         }
 
 
@@ -131,34 +139,13 @@ namespace MyHealthcareApi.Controllers
 
             await _context.SaveChangesAsync();
 
-            // ═══════════════════════════════════════════════════════
-            // إضافة نقاط للمريض عند القبول
-            // ═══════════════════════════════════════════════════════
-            
-            if (dto.IsAvailable && dto.Price.HasValue)
-            {
-                var patient = await _context.Users.FindAsync(prescription.PatientId);
-                if (patient != null)
-                {
-                    // كل 100 جنيه = 1 نقطة
-                    var pointsEarned = (int)(dto.Price.Value / 100);
-                    patient.LoyaltyPoints += pointsEarned;
-                    patient.TotalPurchases += dto.Price.Value;
-                    
-                    // تحديث الخصم (كل نقطة = 1%، حد أقصى 20%)
-                    patient.DiscountPercentage = Math.Min(patient.LoyaltyPoints, 20);
-                    
-                    await _context.SaveChangesAsync();
-                }
-            }
-
             //  إشعار للمريض بالرد
             
             var notificationMessage = dto.IsAvailable 
                 ? $" صيدلية {pharmacy.PharmacyName} عندها الدواء - السعر: {dto.Price} جنيه"
                 : $" صيدلية {pharmacy.PharmacyName} مش عندها الدواء";
 
-            // إشعار مباشر للمريض
+            // إشعار مباشر للمريض بالطريقة القديمة
             await _hubContext.Clients
                 .User(prescription.PatientId)
                 .SendAsync("ReceiveNotification", new
@@ -173,6 +160,15 @@ namespace MyHealthcareApi.Controllers
                     responseId = response.Id,
                     timestamp = DateTime.UtcNow
                 });
+
+            // إشعار دائم محفوظ في الداتابيز
+            await _notificationService.SendNotificationAsync(
+                userId: prescription.PatientId,
+                title: dto.IsAvailable ? "توفر دواء ✅" : "اعتذار صيدلية ❌",
+                message: notificationMessage,
+                type: dto.IsAvailable ? "PharmacyAccepted" : "PharmacyRejected",
+                relatedEntityId: prescription.Id.ToString()
+            );
 
             // إشعار عبر Group (احتياطي)
             await _hubContext.Clients
@@ -226,13 +222,25 @@ namespace MyHealthcareApi.Controllers
             return Ok(responses);
         }
 
-        //  عرض كل الردود المخزنة (للإدارة)
+        //  عرض كل الردود المخزنة (للإدارة) — مقيد بالأدمن فقط
         [HttpGet("responses")]
-        [Authorize(Roles = "Admin,Pharmacy")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllResponses()
         {
             var responses = await _context.PharmacyResponses
                 .Include(r => r.Pharmacy)
+                .Include(r => r.Prescription)
+                .Select(r => new
+                {
+                    r.Id,
+                    r.PrescriptionId,
+                    PrescriptionTitle = r.Prescription.Title,
+                    PharmacyName = r.Pharmacy.PharmacyName,
+                    r.IsAvailable,
+                    r.Price,
+                    r.Note,
+                    r.RespondedAt
+                })
                 .ToListAsync();
 
             return Ok(responses);

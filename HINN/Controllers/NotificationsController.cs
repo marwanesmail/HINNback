@@ -109,7 +109,45 @@ namespace MyHealthcareApi.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            return Ok(new { Message = "تم تحديد كل الإشعارات كمقروءة" });
+            return Ok(new { message = "تم تحديد كل الإشعارات كمقروءة" });
+        }
+
+        // حذف إشعار معين
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteNotification(int id)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            var notification = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
+
+            if (notification == null) return NotFound("الإشعار غير موجود");
+
+            _context.Notifications.Remove(notification);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "تم حذف الإشعار بنجاح" });
+        }
+
+        // حذف كل الإشعارات
+        [HttpDelete]
+        public async Task<IActionResult> DeleteAllNotifications()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            var notifications = await _context.Notifications
+                .Where(n => n.UserId == userId)
+                .ToListAsync();
+
+            if (notifications.Any())
+            {
+                _context.Notifications.RemoveRange(notifications);
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(new { message = "تم حذف جميع الإشعارات" });
         }
     }
 }

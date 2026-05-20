@@ -26,6 +26,7 @@ namespace MyHealthcareApi.Controllers
         private readonly ISmsService _smsService;
         private readonly IRateLimitService _rateLimitService;
         private readonly IAuditLogService _auditService;
+        private readonly IEmailValidationService _emailValidationService;
 
         public AuthController(
             UserManager<AppUser> userManager,
@@ -36,7 +37,8 @@ namespace MyHealthcareApi.Controllers
             IEmailService emailService,
             ISmsService smsService,
             IRateLimitService rateLimitService,
-            IAuditLogService auditService)
+            IAuditLogService auditService,
+            IEmailValidationService emailValidationService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -47,6 +49,28 @@ namespace MyHealthcareApi.Controllers
             _smsService = smsService;
             _rateLimitService = rateLimitService;
             _auditService = auditService;
+            _emailValidationService = emailValidationService;
+        }
+
+        //  التحقق من صحة البريد إلكتروني فورياً
+        [HttpGet("validate-email")]
+        public async Task<IActionResult> ValidateEmail([FromQuery] string email)
+        {
+            // 1. التحقق من الصحة التقنية (الصيغة والدومين)
+            var validation = await _emailValidationService.ValidateEmailAsync(email);
+            if (!validation.isValid)
+            {
+                return Ok(new { isValid = false, message = validation.message });
+            }
+
+            // 2. التحقق من التوفر في النظام
+            var existingUser = await _userManager.FindByEmailAsync(email);
+            if (existingUser != null)
+            {
+                return Ok(new { isValid = false, message = "هذا البريد مسجل بالفعل لمستخدم آخر" });
+            }
+
+            return Ok(new { isValid = true, message = "البريد الإلكتروني صالح ومتاح" });
         }
 
         //  تسجيل صيدلية
@@ -101,6 +125,9 @@ namespace MyHealthcareApi.Controllers
                     success: true
                 );
 
+                // إرسال رسالة للأدمن بالتسجيل الجديد
+                await _emailService.SendNewAccountNotificationToAdminAsync("Pharmacy", pharmacy.Id, user.Email!);
+
                 return Ok(new { Message = "تم تسجيل الصيدلية بنجاح بانتظار موافقة الأدمن" });
             }
             catch (Exception ex)
@@ -142,6 +169,9 @@ namespace MyHealthcareApi.Controllers
 
                 // إرسال رسالة: قيد المراجعة
                 await _emailService.SendPendingApprovalEmailAsync(user.Email!, "Doctor");
+
+                // إرسال رسالة للأدمن
+                await _emailService.SendNewAccountNotificationToAdminAsync("Doctor", doctor.Id, user.Email!);
 
                 return Ok(new { Message = "تم تسجيل الطبيب بنجاح بانتظار موافقة الأدمن" });
             }
@@ -185,6 +215,9 @@ namespace MyHealthcareApi.Controllers
 
                 // إرسال رسالة: قيد المراجعة
                 await _emailService.SendPendingApprovalEmailAsync(user.Email!, "Company");
+
+                // إرسال رسالة للأدمن
+                await _emailService.SendNewAccountNotificationToAdminAsync("Company", company.Id, user.Email!);
 
                 return Ok(new { Message = "تم تسجيل شركة الأدوية بنجاح بانتظار موافقة الأدمن" });
             }

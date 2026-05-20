@@ -16,6 +16,7 @@ namespace MyHealthcareApi.Services
         Task SendPasswordResetEmailAsync(string email, string resetLink);
         Task SendApprovalNotificationAsync(string email, string entityType);
         Task SendPrescriptionNotificationAsync(string email, string prescriptionTitle);
+        Task SendNewAccountNotificationToAdminAsync(string entityType, int accountId, string userEmail);
     }
 
     public class EmailService : IEmailService
@@ -248,6 +249,43 @@ namespace MyHealthcareApi.Services
             ";
 
             await SendEmailAsync(email, subject, message);
+        }
+
+        /// إرسال إشعار للأدمن بتسجيل حساب جديد بحاجة للموافقة
+        public async Task SendNewAccountNotificationToAdminAsync(string entityType, int accountId, string userEmail)
+        {
+            string entityNameAr = entityType switch
+            {
+                "Pharmacy" => "صيدلية",
+                "Doctor" => "طبيب",
+                "Company" => "شركة أدوية",
+                _ => "حساب"
+            };
+
+            const string subject = "تنبيه للأدمن: حساب جديد بانتظار المراجعة - HINN";
+            
+            var message = $@"
+                <html>
+                <body style='font-family: Arial, sans-serif; direction: rtl; text-align: right;'>
+                    <h2 style='color: #E74C3C;'>تسجيل حساب جديد بحاجة للموافقة 🚨</h2>
+                    
+                    <p>قام حساب جديد من نوع <strong>{entityNameAr}</strong> بالتسجيل في المنصة وهو الآن في انتظار المراجعة.</p>
+                    
+                    <div style='background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;'>
+                        <ul>
+                            <li><strong>نوع الحساب:</strong> {entityNameAr}</li>
+                            <li><strong>البريد الإلكتروني للحساب:</strong> {userEmail}</li>
+                            <li><strong>الـ ID الخاص بالحساب:</strong> <span style='font-size: 18px; color: #2E86AB; font-weight: bold;'>{accountId}</span></li>
+                        </ul>
+                    </div>
+                    
+                    <p>يرجى تسجيل الدخول إلى لوحة تحكم الإدارة ومراجعة الطلب والمستندات للموافقة أو الرفض.</p>
+                    <p style='color: #666;'>فريق النظام</p>
+                </body>
+                </html>
+            ";
+
+            await SendEmailAsync("marwnlsmail@gmail.com", subject, message);
         }
     }
 

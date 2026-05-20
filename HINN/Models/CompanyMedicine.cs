@@ -108,5 +108,36 @@ namespace MyHealthcareApi.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+
+        // ═══════════════════════════════════════════════════════
+        // بيانات المتجر (E-commerce)
+        // ═══════════════════════════════════════════════════════
+
+        /// <summary>
+        /// نسبة الخصم (0-100)
+        /// </summary>
+        public int DiscountPercentage { get; set; } = 0;
+
+        /// <summary>
+        /// التقييم العام (من 5)
+        /// </summary>
+        [Column(TypeName = "decimal(3,2)")]
+        public decimal Rating { get; set; } = 5.00m;
+
+        /// <summary>
+        /// عدد المراجعات
+        /// </summary>
+        public int ReviewsCount { get; set; } = 0;
+
+        /// <summary>
+        /// هل المنتج مميز (يظهر في الصفحة الرئيسية أولاً)
+        /// </summary>
+        public bool IsFeatured { get; set; } = false;
+
+        /// <summary>
+        /// هل المنتج جديد (أقل من 30 يوم)
+        /// </summary>
+        [NotMapped]
+        public bool IsNew => (DateTime.UtcNow - CreatedAt).TotalDays <= 30;
     }
 }

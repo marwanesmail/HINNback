@@ -46,6 +46,8 @@ namespace MyHealthcareApi.Controllers
                 Id = d.Id,
                 Name = d.AppUser?.FullName ?? "غير معروف",
                 Email = d.AppUser?.Email ?? "",
+                Phone = d.AppUser?.PhoneNumber ?? "", // ←
+                CreatedAt = d.AppUser?.CreatedAt ?? DateTime.UtcNow, // ←
                 AccountType = "Doctor",
                 AccountTypeArabic = "طبيب"
             }));
@@ -61,6 +63,8 @@ namespace MyHealthcareApi.Controllers
                 Id = p.Id,
                 Name = p.PharmacyName ?? p.AppUser?.FullName ?? "غير معروف",
                 Email = p.AppUser?.Email ?? "",
+                Phone = p.PhoneNumber ?? p.AppUser?.PhoneNumber ?? "", // ←
+                CreatedAt = p.AppUser?.CreatedAt ?? DateTime.UtcNow, // ←
                 AccountType = "Pharmacy",
                 AccountTypeArabic = "صيدلية"
             }));
@@ -76,6 +80,8 @@ namespace MyHealthcareApi.Controllers
                 Id = c.Id,
                 Name = c.CompanyName ?? c.AppUser?.FullName ?? "غير معروف",
                 Email = c.AppUser?.Email ?? "",
+                Phone = c.AppUser?.PhoneNumber ?? "", // ←
+                CreatedAt = c.AppUser?.CreatedAt ?? DateTime.UtcNow, // ←
                 AccountType = "Company",
                 AccountTypeArabic = "شركة أدوية"
             }));
