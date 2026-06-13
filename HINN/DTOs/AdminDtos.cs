@@ -4,7 +4,8 @@ namespace MyHealthcareApi.DTOs
 {
     public class PendingAccountDto
     {
-        public int Id { get; set; }
+        public string Id { get; set; } = string.Empty; // AppUserId (GUID)
+        public int ProfileId { get; set; } // Internal DB ID (e.g., Doctor.Id, Pharmacy.Id, Company.Id)
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string AccountType { get; set; } = string.Empty; // Doctor, Pharmacy, Company
@@ -59,6 +60,11 @@ namespace MyHealthcareApi.DTOs
         public string AccountType { get; set; } = string.Empty;
         public string AccountTypeArabic { get; set; } = string.Empty; // طبيب، صيدلية، شركة أدواية، مريض
         public string Status { get; set; } = string.Empty; // مفعل، معلق
+        public int? ProfileId { get; set; } // The ID of Doctor, Pharmacy, or Company (for approval)
+        public string? LicenseImageUrl { get; set; }
+        public string? TaxDocumentUrl { get; set; }
+        public string? CommercialRecordUrl { get; set; }
+        public string? ProfileImageUrl { get; set; }
     }
 
     public class ChangeAdminEmailDto

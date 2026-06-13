@@ -27,6 +27,7 @@ namespace MyHealthcareApi.Controllers
         private readonly IRateLimitService _rateLimitService;
         private readonly IAuditLogService _auditService;
         private readonly IEmailValidationService _emailValidationService;
+        private readonly INotificationService _notificationService;
 
         public AuthController(
             UserManager<AppUser> userManager,
@@ -38,7 +39,8 @@ namespace MyHealthcareApi.Controllers
             ISmsService smsService,
             IRateLimitService rateLimitService,
             IAuditLogService auditService,
-            IEmailValidationService emailValidationService)
+            IEmailValidationService emailValidationService,
+            INotificationService notificationService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -50,6 +52,7 @@ namespace MyHealthcareApi.Controllers
             _rateLimitService = rateLimitService;
             _auditService = auditService;
             _emailValidationService = emailValidationService;
+            _notificationService = notificationService;
         }
 
         //  التحقق من صحة البريد إلكتروني فورياً
@@ -114,7 +117,6 @@ namespace MyHealthcareApi.Controllers
                 // إرسال رسالة: قيد المراجعة
                 await _emailService.SendPendingApprovalEmailAsync(user.Email!, "Pharmacy");
 
-                
                 // Audit Log
                 await _auditService.LogAsync(
                     user.Id, user.Email!, AuditActionTypes.Register,
@@ -125,8 +127,21 @@ namespace MyHealthcareApi.Controllers
                     success: true
                 );
 
-                // إرسال رسالة للأدمن بالتسجيل الجديد
+                // إرسال رسالة للأدمن بالتسجيل الجديد (إيميل)
                 await _emailService.SendNewAccountNotificationToAdminAsync("Pharmacy", pharmacy.Id, user.Email!);
+
+                // إشعار لحظي SignalR لكل الأدمنيين
+                var admins = await _userManager.Users
+                    .Where(u => u.UserType == Models.Enums.UserType.Admin)
+                    .ToListAsync();
+                foreach (var admin in admins)
+                    await _notificationService.SendNotificationAsync(
+                        admin.Id,
+                        "طلب تسجيل صيدلية جديدة",
+                        $"صيدلية '{pharmacy.PharmacyName}' ({user.Email}) بتنتظر موافقتك.",
+                        "NewAccount",
+                        user.Id
+                    );
 
                 return Ok(new { Message = "تم تسجيل الصيدلية بنجاح بانتظار موافقة الأدمن" });
             }
@@ -170,8 +185,21 @@ namespace MyHealthcareApi.Controllers
                 // إرسال رسالة: قيد المراجعة
                 await _emailService.SendPendingApprovalEmailAsync(user.Email!, "Doctor");
 
-                // إرسال رسالة للأدمن
+                // إرسال رسالة للأدمن (إيميل)
                 await _emailService.SendNewAccountNotificationToAdminAsync("Doctor", doctor.Id, user.Email!);
+
+                // إشعار لحظي SignalR لكل الأدمنيين
+                var admins = await _userManager.Users
+                    .Where(u => u.UserType == Models.Enums.UserType.Admin)
+                    .ToListAsync();
+                foreach (var admin in admins)
+                    await _notificationService.SendNotificationAsync(
+                        admin.Id,
+                        "طلب تسجيل طبيب جديد",
+                        $"الطبيب '{user.FullName ?? user.Email}' ({user.Email}) بينتظر موافقتك.",
+                        "NewAccount",
+                        user.Id
+                    );
 
                 return Ok(new { Message = "تم تسجيل الطبيب بنجاح بانتظار موافقة الأدمن" });
             }
@@ -216,8 +244,21 @@ namespace MyHealthcareApi.Controllers
                 // إرسال رسالة: قيد المراجعة
                 await _emailService.SendPendingApprovalEmailAsync(user.Email!, "Company");
 
-                // إرسال رسالة للأدمن
+                // إرسال رسالة للأدمن (إيميل)
                 await _emailService.SendNewAccountNotificationToAdminAsync("Company", company.Id, user.Email!);
+
+                // إشعار لحظي SignalR لكل الأدمنيين
+                var admins = await _userManager.Users
+                    .Where(u => u.UserType == Models.Enums.UserType.Admin)
+                    .ToListAsync();
+                foreach (var admin in admins)
+                    await _notificationService.SendNotificationAsync(
+                        admin.Id,
+                        "طلب تسجيل شركة أدوية جديدة",
+                        $"شركة '{company.CompanyName}' ({user.Email}) بتنتظر موافقتك.",
+                        "NewAccount",
+                        user.Id
+                    );
 
                 return Ok(new { Message = "تم تسجيل شركة الأدوية بنجاح بانتظار موافقة الأدمن" });
             }

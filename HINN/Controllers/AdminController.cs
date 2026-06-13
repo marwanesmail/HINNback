@@ -43,7 +43,8 @@ namespace MyHealthcareApi.Controllers
 
             pendingAccounts.AddRange(doctors.Select(d => new PendingAccountDto
             {
-                Id = d.Id,
+                Id = d.AppUserId,
+                ProfileId = d.Id,
                 Name = d.AppUser?.FullName ?? "غير معروف",
                 Email = d.AppUser?.Email ?? "",
                 Phone = d.AppUser?.PhoneNumber ?? "", // ←
@@ -60,7 +61,8 @@ namespace MyHealthcareApi.Controllers
 
             pendingAccounts.AddRange(pharmacies.Select(p => new PendingAccountDto
             {
-                Id = p.Id,
+                Id = p.AppUserId,
+                ProfileId = p.Id,
                 Name = p.PharmacyName ?? p.AppUser?.FullName ?? "غير معروف",
                 Email = p.AppUser?.Email ?? "",
                 Phone = p.PhoneNumber ?? p.AppUser?.PhoneNumber ?? "", // ←
@@ -77,7 +79,8 @@ namespace MyHealthcareApi.Controllers
 
             pendingAccounts.AddRange(companies.Select(c => new PendingAccountDto
             {
-                Id = c.Id,
+                Id = c.AppUserId,
+                ProfileId = c.Id,
                 Name = c.CompanyName ?? c.AppUser?.FullName ?? "غير معروف",
                 Email = c.AppUser?.Email ?? "",
                 Phone = c.AppUser?.PhoneNumber ?? "", // ←
@@ -178,44 +181,50 @@ namespace MyHealthcareApi.Controllers
         //  القبول والرفض مع إرسال الإيميلات اللحظية (Direct Emails)
         // ═══════════════════════════════════════════════════════
 
-        [HttpPost("approve/{type}/{id}")]
-        public async Task<IActionResult> ApproveAccount(string type, int id)
+        [HttpPost("approve/{id}")]
+        public async Task<IActionResult> ApproveAccount(string id)
         {
-            string email = "";
-            string name = "";
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null) return NotFound("المستخدم غير موجود");
 
-            if (type == "Doctor")
+            string email = user.Email!;
+            string name = user.FullName ?? "المستخدم";
+            string type = user.UserType.ToString();
+
+            if (user.UserType == Models.Enums.UserType.Doctor)
             {
-                var doctor = await _context.Doctors.Include(d => d.AppUser).FirstOrDefaultAsync(d => d.Id == id);
-                if (doctor == null) return NotFound();
+                var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.AppUserId == user.Id);
+                if (doctor == null) return NotFound("ملف الطبيب غير موجود");
                 
                 doctor.IsApproved = true;
-                email = doctor.AppUser!.Email!;
-                name = doctor.AppUser!.FullName ?? "الطبيب";
             }
-            else if (type == "Pharmacy")
+            else if (user.UserType == Models.Enums.UserType.Pharmacy)
             {
-                var pharmacy = await _context.Pharmacies.Include(p => p.AppUser).FirstOrDefaultAsync(p => p.Id == id);
-                if (pharmacy == null) return NotFound();
+                var pharmacy = await _context.Pharmacies.FirstOrDefaultAsync(p => p.AppUserId == user.Id);
+                if (pharmacy == null) return NotFound("ملف الصيدلية غير موجود");
                 
                 pharmacy.IsApproved = true;
-                email = pharmacy.AppUser!.Email!;
-                name = pharmacy.PharmacyName ?? "الصيدلية";
+                name = pharmacy.PharmacyName;
             }
-            else if (type == "Company")
+            else if (user.UserType == Models.Enums.UserType.Company)
             {
-                var company = await _context.Companies.Include(c => c.AppUser).FirstOrDefaultAsync(c => c.Id == id);
-                if (company == null) return NotFound();
+                var company = await _context.Companies.FirstOrDefaultAsync(c => c.AppUserId == user.Id);
+                if (company == null) return NotFound("ملف الشركة غير موجود");
                 
                 company.IsApproved = true;
-                email = company.AppUser!.Email!;
-                name = company.CompanyName ?? "الشركة";
+                name = company.CompanyName;
+            }
+            else if (user.UserType == Models.Enums.UserType.Patient)
+            {
+                user.EmailConfirmed = true;
             }
             else
             {
                 return BadRequest("نوع الحساب غير معروف");
             }
 
+            user.IsApproved = true;
+            await _userManager.UpdateAsync(user);
             await _context.SaveChangesAsync();
 
             // إرسال الإيميل مباشرة بعد الموافقة
@@ -224,33 +233,38 @@ namespace MyHealthcareApi.Controllers
             return Ok(new { Message = $"تمت الموافقة على {name} بنجاح، وتم إرسال بريد إلكتروني لإعلامه." });
         }
 
-        [HttpPost("reject/{type}/{id}")]
-        public async Task<IActionResult> RejectAccount(string type, int id)
+        [HttpPost("reject/{id}")]
+        public async Task<IActionResult> RejectAccount(string id)
         {
-            if (type == "Doctor")
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null) return NotFound("المستخدم غير موجود");
+
+            if (user.UserType == Models.Enums.UserType.Doctor)
             {
-                var doctor = await _context.Doctors.FindAsync(id);
+                var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.AppUserId == user.Id);
                 if (doctor != null) _context.Doctors.Remove(doctor);
             }
-            else if (type == "Pharmacy")
+            else if (user.UserType == Models.Enums.UserType.Pharmacy)
             {
-                var pharmacy = await _context.Pharmacies.FindAsync(id);
+                var pharmacy = await _context.Pharmacies.FirstOrDefaultAsync(p => p.AppUserId == user.Id);
                 if (pharmacy != null) _context.Pharmacies.Remove(pharmacy);
             }
-            else if (type == "Company")
+            else if (user.UserType == Models.Enums.UserType.Company)
             {
-                var company = await _context.Companies.FindAsync(id);
+                var company = await _context.Companies.FirstOrDefaultAsync(c => c.AppUserId == user.Id);
                 if (company != null) _context.Companies.Remove(company);
             }
-            else
+            else if (user.UserType == Models.Enums.UserType.Patient)
             {
-                return BadRequest("نوع الحساب غير معروف");
+                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.AppUserId == user.Id);
+                if (patient != null) _context.Patients.Remove(patient);
             }
 
             await _context.SaveChangesAsync();
 
-            // (اختياري) ممكن تبعت إيميل وتقوله حسابك اترفض لو حبيت
-            // await _emailService.SendEmailAsync(email, "مرفوض", "تم رفض طلبك");
+            var result = await _userManager.DeleteAsync(user);
+            if (!result.Succeeded)
+                return BadRequest("فشل في حذف المستخدم");
 
             return Ok(new { Message = "تم رفض وحذف الطلب بنجاح" });
         }
@@ -263,6 +277,12 @@ namespace MyHealthcareApi.Controllers
         public async Task<IActionResult> GetUsersManagement()
         {
             var users = await _userManager.Users.ToListAsync();
+            
+            // Fetch profiles in bulk to avoid N+1 queries
+            var doctors = await _context.Doctors.GroupBy(d => d.AppUserId).ToDictionaryAsync(g => g.Key, g => g.First());
+            var pharmacies = await _context.Pharmacies.GroupBy(p => p.AppUserId).ToDictionaryAsync(g => g.Key, g => g.First());
+            var companies = await _context.Companies.GroupBy(c => c.AppUserId).ToDictionaryAsync(g => g.Key, g => g.First());
+
             var result = new List<UserManagementDto>();
 
             foreach (var user in users)
@@ -284,6 +304,29 @@ namespace MyHealthcareApi.Controllers
                     ? (user.EmailConfirmed ? "مفعل" : "معلق")
                     : (user.IsApproved ? "مفعل" : "معلق");
 
+                int? profileId = null;
+                string? licenseImageUrl = null;
+                string? taxDocumentUrl = null;
+                string? commercialRecordUrl = null;
+
+                if (user.UserType == Models.Enums.UserType.Doctor && doctors.TryGetValue(user.Id, out var doctor))
+                {
+                    profileId = doctor.Id;
+                    licenseImageUrl = GetFullUrl(doctor.LicenseImageUrl);
+                }
+                else if (user.UserType == Models.Enums.UserType.Pharmacy && pharmacies.TryGetValue(user.Id, out var pharmacy))
+                {
+                    profileId = pharmacy.Id;
+                    licenseImageUrl = GetFullUrl(pharmacy.LicenseImagePath);
+                    taxDocumentUrl = GetFullUrl(pharmacy.TaxDocumentPath);
+                    commercialRecordUrl = GetFullUrl(pharmacy.CommercialRecordPath);
+                }
+                else if (user.UserType == Models.Enums.UserType.Company && companies.TryGetValue(user.Id, out var company))
+                {
+                    profileId = company.Id;
+                    licenseImageUrl = GetFullUrl(company.LicenseDocumentPath);
+                }
+
                 result.Add(new UserManagementDto
                 {
                     Id = user.Id,
@@ -292,7 +335,12 @@ namespace MyHealthcareApi.Controllers
                     Phone = user.PhoneNumber ?? "",
                     AccountType = accountTypeEn,
                     AccountTypeArabic = accountTypeAr,
-                    Status = status
+                    Status = status,
+                    ProfileId = profileId,
+                    LicenseImageUrl = licenseImageUrl,
+                    TaxDocumentUrl = taxDocumentUrl,
+                    CommercialRecordUrl = commercialRecordUrl,
+                    ProfileImageUrl = GetFullUrl(user.ProfileImageUrl)
                 });
             }
 
