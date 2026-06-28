@@ -36,25 +36,32 @@ namespace MyHealthcareApi.Data
         {
             base.OnModelCreating(builder);
 
-            // Doctor ↔ AppUser
+            // Doctor ↔ AppUser (1:1)
             builder.Entity<Doctor>()
                 .HasOne(d => d.AppUser)
-                .WithMany()
-                .HasForeignKey(d => d.AppUserId)
+                .WithOne()
+                .HasForeignKey<Doctor>(d => d.AppUserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Pharmacy ↔ AppUser
+            // Patient ↔ AppUser (1:1)
+            builder.Entity<Patient>()
+                .HasOne(p => p.AppUser)
+                .WithOne()
+                .HasForeignKey<Patient>(p => p.AppUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Pharmacy ↔ AppUser (1:1)
             builder.Entity<Pharmacy>()
                 .HasOne(p => p.AppUser)
-                .WithMany()
-                .HasForeignKey(p => p.AppUserId)
+                .WithOne()
+                .HasForeignKey<Pharmacy>(p => p.AppUserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Company ↔ AppUser
+            // Company ↔ AppUser (1:1)
             builder.Entity<Company>()
                 .HasOne(c => c.AppUser)
-                .WithMany()
-                .HasForeignKey(c => c.AppUserId)
+                .WithOne()
+                .HasForeignKey<Company>(c => c.AppUserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Message Sender
